@@ -204,7 +204,7 @@ const AIConsciousnessPage = () => {
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder="Search..."
-                            className="w-full bg-transparent border-0 border-b-2 border-cyan-400/50 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400 text-white pl-0 pr-8"
+                            className="w-full bg-transparent border-0 border-b-2 border-cyan-400 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 text-white pl-0 pr-8"
                             autoFocus
                           />
                           <Button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400/70 hover:text-cyan-400 h-8 w-8">
@@ -214,9 +214,9 @@ const AIConsciousnessPage = () => {
                       </form>
                     </motion.div>
                   ) : (
-                    <div onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}>
+                    <motion.div key="logo" exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}>
                         <EdengramLogo />
-                    </div>
+                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>
