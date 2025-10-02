@@ -5,15 +5,17 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
+import { Slot } from '@radix-ui/react-slot';
 
 // --- Embedded UI Components ---
 
 const Button = React.forwardRef<
   HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement>
->(({ className, ...props }, ref) => {
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { asChild?: boolean }
+>(({ className, asChild = false, ...props }, ref) => {
+  const Comp = asChild ? Slot : 'button';
   return (
-    <button
+    <Comp
       className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-white hover:no-underline hover:text-cyan-400 p-0 h-auto ${className}`}
       ref={ref}
       {...props}
@@ -174,7 +176,7 @@ const AIConsciousnessPage = () => {
                             className="w-full bg-transparent border-0 border-b-2 border-cyan-400/50 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400 text-white pl-0 pr-8"
                             autoFocus
                           />
-                          <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400/70 hover:text-cyan-400 h-8 w-8">
+                          <Button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400/70 hover:text-cyan-400 h-8 w-8">
                               <Search size={20} />
                           </Button>
                         </div>
@@ -187,7 +189,7 @@ const AIConsciousnessPage = () => {
                   )}
                 </AnimatePresence>
               </div>
-              <Button asChild variant="link">
+              <Button asChild>
                 <Link href="/login">
                     Sign In
                 </Link>
@@ -282,3 +284,5 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
