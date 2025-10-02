@@ -21,6 +21,7 @@ import { articlesTool } from '../tools/articles';
 import { cricketTool } from '../tools/cricket';
 import { mediaSearchTool } from '../tools/media-search';
 import { spaceNewsTool } from '../tools/space-news';
+import { getGreetingResponse } from '../greetings';
 
 const PerformSearchInputSchema = z.object({
   query: z.string().describe('The search query from the user.'),
@@ -37,6 +38,10 @@ export type PerformSearchOutput = z.infer<typeof PerformSearchOutputSchema>;
 export async function performSearch(
   input: PerformSearchInput
 ): Promise<PerformSearchOutput> {
+  const greetingResponse = getGreetingResponse(input.query);
+  if (greetingResponse) {
+    return { response: greetingResponse };
+  }
   return performSearchFlow(input);
 }
 
