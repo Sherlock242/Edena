@@ -36,9 +36,13 @@ const generateImageFlow = ai.defineFlow(
     outputSchema: GenerateImageOutputSchema,
   },
   async input => {
+    // Switching to a more accessible public model for image generation.
     const {media} = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
+      model: 'googleai/gemini-1.5-flash-latest',
       prompt: `Generate a high-quality, photorealistic image based on the following description: ${input.prompt}`,
+       config: {
+        responseModalities: ['IMAGE'],
+      },
     });
 
     if (!media.url) {
