@@ -43,7 +43,7 @@ export async function performSearch(
   // Level 1: Check for simple greetings first. This is instant and local.
   const greetingResponse = getGreetingResponse(input.query);
   if (greetingResponse) {
-    return { response: greetingResponse };
+    return { response: `(G) ${greetingResponse}` };
   }
 
   // Level 2: Strip common prefixes to get a cleaner query for all subsequent steps.
@@ -78,7 +78,7 @@ const performSearchFlow = ai.defineFlow(
         // A simple check to see if the result is a direct answer and not a "not found" message.
         if (ddgResult && !ddgResult.toLowerCase().includes('no direct answer') && !ddgResult.toLowerCase().includes('couldn\'t perform a web search')) {
           // If we get a good enough answer, return it immediately to save costs.
-          return { response: ddgResult };
+          return { response: `(Dgg) ${ddgResult}` };
         }
     } catch (e) {
         console.warn("Initial DuckDuckGo search failed, proceeding to main AI flow.", e);
@@ -88,7 +88,7 @@ const performSearchFlow = ai.defineFlow(
     try {
       const {output} = await prompt(input);
       if (output) {
-        return output;
+        return { response: `(AI+API) ${output.response}` };
       }
       throw new Error("Primary AI prompt failed to produce an output.");
     } catch(e) {
@@ -96,10 +96,10 @@ const performSearchFlow = ai.defineFlow(
         // Level 5: Final Fallback. If the main AI fails (e.g., quota), use a direct web search as a safety net.
         try {
             const fallbackResult = await ddgSearchTool(input);
-            return { response: fallbackResult };
+            return { response: `(Dgg) ${fallbackResult}` };
         } catch (fallbackError) {
             console.error("Final fallback search also failed.", fallbackError);
-            return { response: "I'm sorry, but I'm having trouble connecting to all of my information sources right now. Please try again in a moment." };
+            return { response: "(System) I'm sorry, but I'm having trouble connecting to all of my information sources right now. Please try again in a moment." };
         }
     }
   }
