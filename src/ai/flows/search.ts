@@ -72,7 +72,7 @@ const performSearchFlow = ai.defineFlow(
     outputSchema: PerformSearchOutputSchema,
   },
   async input => {
-    // Level 2 (NEW): Targeted single-API check for very direct queries
+    // Level 3: Targeted single-API check for very direct queries
     try {
         if (input.query.toLowerCase().startsWith('weather in ')) {
             const location = input.query.substring('weather in '.length);
@@ -88,7 +88,7 @@ const performSearchFlow = ai.defineFlow(
         console.warn("Targeted API call failed, proceeding to next level.", e);
     }
     
-    // Level 3: First, try a quick direct web search. This is a fast, free API call.
+    // Level 4: If no targeted API, try a quick direct web search.
     try {
         const ddgResult = await ddgSearchTool(input);
         if (ddgResult && !ddgResult.toLowerCase().includes('no direct answer') && !ddgResult.toLowerCase().includes('couldn\'t perform a web search')) {
@@ -98,7 +98,7 @@ const performSearchFlow = ai.defineFlow(
         console.warn("Initial DuckDuckGo search failed, proceeding to main AI flow.", e);
     }
     
-    // Level 4: If the quick search fails or is insufficient, engage the full AI with all tools.
+    // Level 5: If the quick search fails or is insufficient, engage the full AI with all tools.
     try {
       const {output} = await prompt(input);
       if (output) {
@@ -107,7 +107,7 @@ const performSearchFlow = ai.defineFlow(
       throw new Error("Primary AI prompt failed to produce an output.");
     } catch(e) {
         console.error("Primary search flow failed, attempting final fallback.", e);
-        // Level 5: Final Fallback. If the main AI fails (e.g., quota), use a direct web search as a safety net.
+        // Level 6: Final Fallback. If the main AI fails (e.g., quota), use a direct web search as a safety net.
         try {
             const fallbackResult = await ddgSearchTool(input);
             return { response: `(Dgg) ${fallbackResult}` };
