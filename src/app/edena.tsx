@@ -30,7 +30,7 @@ const Input = React.forwardRef<
 >(({ className, ...props }, ref) => {
   return (
     <input
-      className={`flex h-10 w-full rounded-md border-input bg-transparent px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm ${className}`}
+      className={`flex h-10 w-full rounded-md border-b-2 border-cyan-400 bg-transparent px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm ${className}`}
       ref={ref}
       {...props}
     />
@@ -274,7 +274,7 @@ const AIConsciousnessPage = () => {
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder="Search..."
-                            className="w-full bg-transparent border-0 border-b-2 border-cyan-400 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 text-white pl-0 pr-8"
+                            className="w-full bg-transparent border-0 rounded-none text-white pl-0 pr-8"
                             autoFocus
                           />
                           <Button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400/70 hover:text-cyan-400 h-8 w-8">
@@ -380,5 +380,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
