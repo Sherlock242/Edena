@@ -4,39 +4,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search } from 'lucide-react';
-import { Slot } from '@radix-ui/react-slot';
 import { performSearch } from '@/ai/flows/search';
-
-// --- Embedded UI Components ---
-
-const Button = React.forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & { asChild?: boolean }
->(({ className, asChild = false, ...props }, ref) => {
-  const Comp = asChild ? Slot : 'button';
-  return (
-    <Comp
-      className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-white hover:no-underline hover:text-cyan-400 p-0 h-auto ${className}`}
-      ref={ref}
-      {...props}
-    />
-  );
-});
-Button.displayName = 'Button';
-
-const Input = React.forwardRef<
-  HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement>
->(({ className, ...props }, ref) => {
-  return (
-    <input
-      className={`flex h-10 w-full rounded-md border-b-2 border-cyan-400 bg-transparent px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm ${className}`}
-      ref={ref}
-      {...props}
-    />
-  );
-});
-Input.displayName = 'Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 
 // --- Embedded Logo Component ---
@@ -279,10 +249,10 @@ const AIConsciousnessPage = () => {
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder="Search..."
-                            className="w-full bg-transparent border-0 rounded-none text-white pl-0 pr-8"
+                            className="w-full bg-transparent border-b-2 border-cyan-400 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                             autoFocus
                           />
-                          <Button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400 h-8 w-8">
+                          <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400 h-8 w-8">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <defs>
                                 <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -303,7 +273,7 @@ const AIConsciousnessPage = () => {
                   )}
                 </AnimatePresence>
               </div>
-              <Button className="h-10 w-10">
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:text-cyan-300">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <defs>
                     <linearGradient id="menu-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
