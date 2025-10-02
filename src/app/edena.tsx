@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { performSearch } from '@/ai/flows/search';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -274,16 +274,7 @@ const AIConsciousnessPage = () => {
                 </AnimatePresence>
               </div>
               <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:text-cyan-300">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="menu-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
-                      <stop offset="100%" style={{stopColor: 'rgb(0, 255, 255)'}} />
-                    </linearGradient>
-                  </defs>
-                  <path d="M4 8H20" stroke="url(#menu-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M4 16H20" stroke="url(#menu-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <Menu className="text-cyan-400" />
               </Button>
           </div>
         </header>
