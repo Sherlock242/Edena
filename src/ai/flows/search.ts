@@ -81,8 +81,14 @@ export async function performSearch(
   if (greetingResponse) {
     return { response: `(G) ${greetingResponse}` };
   }
+  
+  // Level 2: Try a targeted API call.
+  const directApiResponse = await tryDirectApiCall(originalQuery);
+  if (directApiResponse) {
+      return { response: directApiResponse };
+  }
 
-  // Level 2: Try DuckDuckGo search.
+  // Level 3: Try DuckDuckGo search.
   try {
       const ddgResult = await ddgSearchTool({ query: originalQuery });
       if (isValidSearchResult(ddgResult)) {
@@ -90,12 +96,6 @@ export async function performSearch(
       }
   } catch (e) {
       console.warn("DDG search failed, proceeding to next step.", e);
-  }
-
-  // Level 3: Try a targeted API call.
-  const directApiResponse = await tryDirectApiCall(originalQuery);
-  if (directApiResponse) {
-      return { response: directApiResponse };
   }
 
   // Level 4: If all direct methods fail, use the main AI flow.
@@ -123,7 +123,7 @@ const performSearchFlow = ai.defineFlow(
     outputSchema: PerformSearchOutputSchema,
   },
   async input => {
-    // This flow is now the main AI-powered step (Level 4) and contains the final fallbacks.
+    // This flow is now the main AI-powered step and contains the final fallbacks.
     try {
       const {output} = await prompt(input);
       if (output && isValidSearchResult(output.response)) {
