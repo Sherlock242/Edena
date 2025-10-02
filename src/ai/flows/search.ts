@@ -69,7 +69,17 @@ const performSearchFlow = ai.defineFlow(
     outputSchema: PerformSearchOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      if (output) {
+        return output;
+      }
+      throw new Error("Primary prompt failed to produce an output.");
+    } catch(e) {
+        console.error("Primary search flow failed, attempting fallback.", e);
+        // Fallback to a direct web search if the main prompt fails
+        const fallbackResult = await ddgSearchTool(input);
+        return { response: fallbackResult };
+    }
   }
 );
