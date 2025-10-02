@@ -256,7 +256,7 @@ const AIConsciousnessPage = () => {
       <div className="flex flex-col h-screen bg-black text-white p-4 overflow-hidden" onClick={handleContainerClick}>
         <header className="absolute top-0 left-0 right-0 p-4 z-10">
           <div className="flex items-center justify-start w-full">
-              <div className="relative flex items-center h-9 max-w-xs mr-4">
+              <div className="relative flex items-center h-9 w-[80%] max-w-xl mr-4">
                 <AnimatePresence mode="wait">
                   {showSearch ? (
                     <motion.div
@@ -277,7 +277,7 @@ const AIConsciousnessPage = () => {
                             className="w-full bg-transparent border-0 rounded-none text-white pl-0 pr-8"
                             autoFocus
                           />
-                          <Button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400/70 hover:text-cyan-400 h-8 w-8">
+                          <Button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400 h-8 w-8">
                               <Search size={20} />
                           </Button>
                         </div>
