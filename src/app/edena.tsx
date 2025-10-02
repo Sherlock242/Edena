@@ -81,10 +81,47 @@ const AIConsciousnessPage = () => {
 
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+  
+  useEffect(() => {
+    if (!isClient) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn("Speech recognition not supported in this browser.");
+      return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim();
+      processQuery(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech Recognition Error:", event.error);
+      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+        speak("I didn't catch that. Please try again.");
+      } else {
+        speak("I'm having trouble with my ears right now. Please try again later.");
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+  }, [isClient]);
 
   useEffect(() => {
     if (isClient) {
@@ -157,17 +194,20 @@ const AIConsciousnessPage = () => {
         setIsBlushing(false);
         return;
     }
+    
     if (isListening) {
+      recognitionRef.current?.stop();
       setIsListening(false);
       return;
     }
-    setIsListening(true);
-    setAiResponse('');
-    // Mock listening
-    setTimeout(() => {
-        setIsListening(false);
-        processQuery("a sample voice query");
-    }, 3000);
+    
+    if (recognitionRef.current) {
+        setIsListening(true);
+        setAiResponse('');
+        recognitionRef.current.start();
+    } else {
+        speak("I'm sorry, my voice recognition isn't available on this browser.");
+    }
   };
 
   const handleManualSearch = (e: React.FormEvent) => {
@@ -332,5 +372,7 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
 
     
