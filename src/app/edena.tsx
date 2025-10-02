@@ -2,18 +2,32 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu } from 'lucide-react';
+import { Menu, Search, Image as ImageIcon } from 'lucide-react';
 import { performSearch } from '@/ai/flows/search';
+import { generateImage } from '@/ai/flows/generate-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
 
 
-// --- Embedded Logo Component ---
-const EdengramLogo = ({ className, onClick }: { className?: string; onClick?: (e: React.MouseEvent) => void }) => {
+type AppMode = 'search' | 'image';
+
+const EdengramLogo = ({ className, onClick, mode }: { className?: string; onClick?: (e: React.MouseEvent) => void; mode: AppMode }) => {
+    const gradient = mode === 'image' 
+        ? 'from-orangered to-amber-500' 
+        : 'from-cyan-400 to-primary';
+    
     return (
         <motion.h1
-          className={`font-jarvis text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-primary cursor-pointer ${className}`}
+          className={`font-jarvis text-2xl text-transparent bg-clip-text bg-gradient-to-r ${gradient} cursor-pointer ${className}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -37,12 +51,14 @@ type Particle = {
 
 
 const AIConsciousnessPage = () => {
+  const [appMode, setAppMode] = useState<AppMode>('search');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [aiResponse, setAiResponse] = useState("Hello there! How can I help you search for information today?");
   const [aiResponseSource, setAiResponseSource] = useState('');
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [dots, setDots] = useState('');
   const [isAngry, setIsAngry] = useState(false);
   const [isBlushing, setIsBlushing] = useState(false);
@@ -108,6 +124,13 @@ const AIConsciousnessPage = () => {
       setParticles(newParticles);
     }
   }, [isClient]);
+  
+  const resetState = useCallback(() => {
+        setAiResponse('');
+        setAiResponseSource('');
+        setGeneratedImageUrl(null);
+        setIsLoading(true);
+  }, []);
 
   const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
     if (!isClient || !window.speechSynthesis) return;
@@ -117,7 +140,8 @@ const AIConsciousnessPage = () => {
     const sourceMatch = text.match(/^\(([\w+]+)\)\s*/);
     const source = sourceMatch ? sourceMatch[1] : '';
     const textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
-
+    
+    resetState();
     setAiResponse(textToSpeak);
     setAiResponseSource(source);
 
@@ -145,7 +169,7 @@ const AIConsciousnessPage = () => {
     };
 
     window.speechSynthesis.speak(utterance);
-  }, [isClient]);
+  }, [isClient, resetState]);
 
 
   const processQuery = useCallback(async (query: string) => {
@@ -153,20 +177,24 @@ const AIConsciousnessPage = () => {
         speak("I didn't catch that. What would you like to search for?");
         return;
     }
-    setIsLoading(true);
-    setAiResponse('');
-    setAiResponseSource('');
+    resetState();
     
     try {
-      const result = await performSearch({ query });
-      speak(result.response);
+      if (appMode === 'search') {
+        const result = await performSearch({ query });
+        speak(result.response);
+      } else { // appMode === 'image'
+        const result = await generateImage({ prompt: query });
+        setGeneratedImageUrl(result.imageUrl);
+        speak(`Here is the image I generated for: ${query}`);
+      }
     } catch (error) {
       console.error("AI Error:", error);
-      speak("I'm sorry, I'm having trouble connecting to my knowledge base right now.");
+      speak(`I'm sorry, I'm having trouble connecting to my ${appMode} knowledge base right now.`);
     } finally {
       setIsLoading(false);
     }
-  }, [speak]);
+  }, [appMode, speak, resetState]);
 
   const handleListen = () => {
     if (isSpeaking) {
@@ -185,8 +213,7 @@ const AIConsciousnessPage = () => {
     
     if (recognitionRef.current) {
         setIsListening(true);
-        setAiResponse('');
-        setAiResponseSource('');
+        resetState();
         recognitionRef.current.start();
     } else {
         speak("I'm sorry, my voice recognition isn't available on this browser.");
@@ -208,6 +235,15 @@ const AIConsciousnessPage = () => {
       setShowSearch(false);
     }
   };
+  
+  const handleModeChange = (mode: AppMode) => {
+    setAppMode(mode);
+    const defaultText = mode === 'search' 
+      ? "I am Edena, ready for search. How can I help?"
+      : "Image generation activated. What would you like me to create?";
+    speak(defaultText);
+    resetState();
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -216,15 +252,23 @@ const AIConsciousnessPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const ring1Color = isAngry ? 'rgba(255, 69, 0, 0.5)' : (isBlushing ? 'rgba(255, 182, 193, 0.5)' : 'rgba(0, 255, 255, 0.5)');
-  const ring2Color = isAngry ? 'rgba(255, 69, 0, 0.6)' : (isBlushing ? 'rgba(255, 182, 193, 0.6)' : 'rgba(0, 255, 255, 0.6)');
-  const ring3Color = isAngry ? 'rgba(255, 69, 0, 0.7)' : (isBlushing ? 'rgba(255, 182, 193, 0.7)' : 'rgba(0, 255, 255, 0.7)');
-  const orbGradient = isAngry 
-    ? 'linear-gradient(to bottom right, orangered, #FF8C00)' 
-    : (isBlushing ? 'linear-gradient(to bottom right, #FFC0CB, #FFB6C1)' : 'linear-gradient(to bottom right, hsl(var(--primary)), #00BFFF)');
-  const orbBoxShadow = isAngry
+  const isImageMode = appMode === 'image';
+
+  const ring1Color = isImageMode ? 'rgba(255, 69, 0, 0.5)' : 'rgba(0, 255, 255, 0.5)';
+  const ring2Color = isImageMode ? 'rgba(255, 100, 0, 0.6)' : 'rgba(0, 255, 255, 0.6)';
+  const ring3Color = isImageMode ? 'rgba(255, 140, 0, 0.7)' : 'rgba(0, 255, 255, 0.7)';
+  const orbGradient = isImageMode
+    ? 'linear-gradient(to bottom right, orangered, #FF8C00)'
+    : 'linear-gradient(to bottom right, hsl(var(--primary)), #00BFFF)';
+  const orbBoxShadow = isImageMode
     ? '0 0 30px orangered, 0 0 15px #FF8C00'
-    : (isBlushing ? '0 0 30px #FFC0CB, 0 0 15px #FFB6C1)' : '0 0 30px #0ff, 0 0 15px hsl(var(--primary))');
+    : '0 0 30px #0ff, 0 0 15px hsl(var(--primary))';
+  const particleColor = isImageMode ? 'bg-amber-500/50' : 'bg-cyan-400/50';
+  const iconColor = isImageMode ? 'orangered' : 'cyan-400';
+  const iconGradientId = isImageMode ? 'icon-gradient-image' : 'icon-gradient-search';
+  const iconStop1 = isImageMode ? 'orangered' : 'hsl(var(--primary))';
+  const iconStop2 = isImageMode ? '#FF8C00' : '#00BFFF';
+
 
   return (
     <>
@@ -248,19 +292,20 @@ const AIConsciousnessPage = () => {
                             type="text"
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
-                            placeholder="Search..."
+                            placeholder={appMode === 'search' ? 'Search...' : 'Describe an image...'}
                             className="w-full bg-transparent border-0 border-b-2 border-cyan-400 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            style={{ borderColor: isImageMode ? 'orangered' : 'hsl(var(--primary))' }}
                             autoFocus
                           />
-                          <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400 h-8 w-8">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8">
+                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <defs>
-                                <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" style={{stopColor: 'hsl(var(--primary))', stopOpacity: 1}} />
-                                  <stop offset="100%" style={{stopColor: '#00BFFF', stopOpacity: 1}} />
+                                <linearGradient id={iconGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" style={{stopColor: iconStop1, stopOpacity: 1}} />
+                                  <stop offset="100%" style={{stopColor: iconStop2, stopOpacity: 1}} />
                                 </linearGradient>
                               </defs>
-                              <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="url(#icon-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke={`url(#${iconGradientId})`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           </Button>
                         </div>
@@ -268,14 +313,28 @@ const AIConsciousnessPage = () => {
                     </motion.div>
                   ) : (
                     <motion.div key="logo" exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                        <EdengramLogo onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}/>
+                        <EdengramLogo mode={appMode} onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}/>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-              <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:text-cyan-300 hover:bg-transparent">
-                <Menu className="text-cyan-400" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:text-cyan-300 hover:bg-transparent">
+                        <Menu style={{ color: isImageMode ? 'orangered' : 'hsl(var(--primary))' }} />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                    <DropdownMenuItem onClick={() => handleModeChange('search')}>
+                        <Search className="mr-2 h-4 w-4" />
+                        <span>Search Edena</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleModeChange('image')}>
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        <span>Image Edena</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
           </div>
         </header>
 
@@ -291,7 +350,7 @@ const AIConsciousnessPage = () => {
                 {isClient && particles.map((p) => (
                       <motion.div
                           key={`particle-${p.id}`}
-                          className="absolute bg-cyan-400/50 rounded-full"
+                          className={`absolute ${particleColor} rounded-full`}
                           style={{
                               width: `${p.width}px`,
                               height: `${p.height}px`,
@@ -337,10 +396,10 @@ const AIConsciousnessPage = () => {
               />
           </motion.div>
 
-          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center">
+          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full">
               <AnimatePresence mode="wait">
                   <motion.div
-                      key={isLoading ? 'loader' : (aiResponse + aiResponseSource)}
+                      key={isLoading ? 'loader' : (aiResponse + aiResponseSource + generatedImageUrl)}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -348,9 +407,15 @@ const AIConsciousnessPage = () => {
                       className="w-[90vw] md:w-auto flex flex-col items-center"
                   >
                       {isLoading ? (
-                          <p className="text-lg text-cyan-400">Thinking{dots}</p>
+                          <p className="text-lg" style={{ color: isImageMode ? 'orangered' : 'hsl(var(--primary))' }}>
+                            {appMode === 'image' ? 'Generating' : 'Thinking'}{dots}
+                          </p>
                       ) : isListening ? (
-                          <p className="text-lg text-cyan-400">Listening{dots}</p>
+                          <p className="text-lg" style={{ color: isImageMode ? 'orangered' : 'hsl(var(--primary))' }}>Listening{dots}</p>
+                      ) : generatedImageUrl ? (
+                        <div className="mt-4 rounded-lg overflow-hidden border-2" style={{ borderColor: 'orangered' }}>
+                          <Image src={generatedImageUrl} alt="Generated image" width={300} height={300} className="object-contain" />
+                        </div>
                       ) : aiResponse ? (
                           <>
                             {aiResponseSource && (
@@ -359,7 +424,7 @@ const AIConsciousnessPage = () => {
                             <p className="text-lg text-center md:max-w-md">{aiResponse}</p>
                           </>
                       ) : (
-                          <p className="text-gray-400">Click the orb to start a voice search.</p>
+                          <p className="text-gray-400">Click the orb to start a voice command.</p>
                       )}
                   </motion.div>
               </AnimatePresence>

@@ -114,8 +114,9 @@ const specializedTools: ToolDefinition[] = [
  */
 async function tryDirectApiCall(originalQuery: string): Promise<string | null> {
     const queriesToCheck = [originalQuery];
+    
+    // Also check a version with common conversational prefixes stripped off.
     const strippedQuery = stripQueryPrefix(originalQuery);
-
     if (strippedQuery && strippedQuery.toLowerCase() !== originalQuery.toLowerCase()) {
         queriesToCheck.push(strippedQuery);
     }
@@ -124,6 +125,7 @@ async function tryDirectApiCall(originalQuery: string): Promise<string | null> {
         const lowerQuery = query.toLowerCase();
         for (const { tool, keywords, getInput } of specializedTools) {
             for (const keyword of keywords) {
+                // Match if query starts with keyword or is the keyword itself
                 if (lowerQuery.startsWith(keyword + ' ') || lowerQuery === keyword) {
                     try {
                         const input = getInput(query, keyword);
@@ -132,6 +134,7 @@ async function tryDirectApiCall(originalQuery: string): Promise<string | null> {
                             return `(PA) ${result}`;
                         }
                     } catch (e) {
+                        // Log the error but proceed to the next tool/method
                         console.warn(`Direct API call for '${keyword}' failed, proceeding.`, e);
                     }
                 }
@@ -139,7 +142,7 @@ async function tryDirectApiCall(originalQuery: string): Promise<string | null> {
         }
     }
     
-    return null;
+    return null; // No direct API call was successful
 }
 
 
