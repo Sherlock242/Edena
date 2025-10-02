@@ -22,6 +22,7 @@ import { articlesTool } from '../tools/articles';
 import { cricketTool } from '../tools/cricket';
 import { mediaSearchTool } from '../tools/media-search';
 import { spaceNewsTool } from '../tools/space-news';
+import { snexengineTool } from '../tools/snexengine';
 import { getGreetingResponse } from '../greetings';
 import { stripQueryPrefix } from '../prefixes';
 
@@ -57,13 +58,20 @@ const prompt = ai.definePrompt({
   name: 'performSearchPrompt',
   input: {schema: PerformSearchInputSchema},
   output: {schema: PerformSearchOutputSchema},
-  tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool],
+  tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool, snexengineTool],
   prompt: `You are a helpful AI assistant named Edena. Your goal is to provide concise and accurate answers to the user's query.
 
 You have access to several tools to help you answer questions. Based on the user's query, you can decide to use one of the tools to get the most up-to-date and relevant information.
 
 Query: {{{query}}}`,
 });
+
+// Helper function to check for valid search results
+const isValidSearchResult = (result: string) => {
+    if (!result) return false;
+    const lowerResult = result.toLowerCase();
+    return !lowerResult.includes('no direct answer') && !lowerResult.includes("couldn't perform a web search") && !lowerResult.includes('no results found');
+}
 
 const performSearchFlow = ai.defineFlow(
   {
@@ -88,14 +96,18 @@ const performSearchFlow = ai.defineFlow(
         console.warn("Targeted API call failed, proceeding to next level.", e);
     }
     
-    // Level 4: If no targeted API, try a quick direct web search.
+    // Level 4: Quick Search Race. Try both SnexEngine and DuckDuckGo and use whichever responds first.
     try {
-        const ddgResult = await ddgSearchTool(input);
-        if (ddgResult && !ddgResult.toLowerCase().includes('no direct answer') && !ddgResult.toLowerCase().includes('couldn\'t perform a web search')) {
-          return { response: `(Dgg) ${ddgResult}` };
+        const raceWinner = await Promise.any([
+            snexengineTool(input).then(res => ({source: 'Snex', result: res})),
+            ddgSearchTool(input).then(res => ({source: 'Dgg', result: res}))
+        ]);
+        
+        if (isValidSearchResult(raceWinner.result)) {
+            return { response: `(${raceWinner.source}) ${raceWinner.result}` };
         }
     } catch (e) {
-        console.warn("Initial DuckDuckGo search failed, proceeding to main AI flow.", e);
+        console.warn("Quick search race failed or returned no valid results, proceeding to main AI flow.", e);
     }
     
     // Level 5: If the quick search fails or is insufficient, engage the full AI with all tools.
@@ -107,15 +119,20 @@ const performSearchFlow = ai.defineFlow(
       throw new Error("Primary AI prompt failed to produce an output.");
     } catch(e) {
         console.error("Primary search flow failed, attempting final fallback.", e);
-        // Level 6: Final Fallback. If the main AI fails (e.g., quota), use a direct web search as a safety net.
+        // Level 6: Ultimate Fallback. If the main AI fails, try the search engines, then a forced tool search.
         try {
-            const fallbackResult = await ddgSearchTool(input);
-             if (fallbackResult && !fallbackResult.toLowerCase().includes('no direct answer') && !fallbackResult.toLowerCase().includes('couldn\'t perform a web search')) {
-                return { response: `(Dgg) ${fallbackResult}` };
+            // First, try the search race again.
+            const fallbackRaceWinner = await Promise.any([
+                snexengineTool(input).then(res => ({source: 'Snex', result: res})),
+                ddgSearchTool(input).then(res => ({source: 'Dgg', result: res}))
+            ]);
+            if (isValidSearchResult(fallbackRaceWinner.result)) {
+                return { response: `(${fallbackRaceWinner.source}) ${fallbackRaceWinner.result}` };
             }
-            throw new Error("Fallback DuckDuckGo search was inconclusive.");
+            throw new Error("Fallback search race was inconclusive.");
         } catch (fallbackError) {
-            console.error("Final fallback search also failed, attempting final tool-based search.", fallbackError);
+            console.error("Fallback search race also failed, attempting final tool-based search.", fallbackError);
+            // If the search engines fail, try to force the AI to use another tool.
             try {
                 const finalAttemptInput = { query: "Search with a tool: " + input.query };
                 const { output } = await prompt(finalAttemptInput);

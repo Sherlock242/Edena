@@ -11,4 +11,5 @@ import '@/ai/tools/articles.ts';
 import '@/ai/tools/cricket.ts';
 import '@/ai/tools/media-search.ts';
 import '@/ai/tools/space-news.ts';
+import '@/ai/tools/snexengine.ts';
 import '@/ai/prefixes.ts';
