@@ -110,10 +110,23 @@ const performSearchFlow = ai.defineFlow(
         // Level 6: Final Fallback. If the main AI fails (e.g., quota), use a direct web search as a safety net.
         try {
             const fallbackResult = await ddgSearchTool(input);
-            return { response: `(Dgg) ${fallbackResult}` };
+             if (fallbackResult && !fallbackResult.toLowerCase().includes('no direct answer') && !fallbackResult.toLowerCase().includes('couldn\'t perform a web search')) {
+                return { response: `(Dgg) ${fallbackResult}` };
+            }
+            throw new Error("Fallback DuckDuckGo search was inconclusive.");
         } catch (fallbackError) {
-            console.error("Final fallback search also failed.", fallbackError);
-            return { response: "(System) I'm sorry, but I'm having trouble connecting to all of my information sources right now. Please try again in a moment." };
+            console.error("Final fallback search also failed, attempting final tool-based search.", fallbackError);
+            try {
+                const finalAttemptInput = { query: "Search with a tool: " + input.query };
+                const { output } = await prompt(finalAttemptInput);
+                 if (output) {
+                    return { response: `(AI+API) ${output.response}` };
+                }
+                throw new Error("Final tool-based search attempt failed to produce an output.");
+            } catch (finalError) {
+                console.error("All search methods failed.", finalError);
+                return { response: "(System) I'm sorry, but I'm having trouble connecting to all of my information sources right now. Please try again in a moment." };
+            }
         }
     }
   }
