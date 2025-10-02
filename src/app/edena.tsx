@@ -422,7 +422,7 @@ const AIConsciousnessPage = () => {
                         <>
                           {generatedImageUrl && (
                             <div className="mb-4 rounded-lg overflow-hidden border-2" style={{ borderColor: 'orangered' }}>
-                              <Image src={generatedImageUrl} alt="Generated image" width={300} height={300} className="object-contain" />
+                              <Image src={generatedImageUrl} alt="Generated image" width={200} height={200} className="object-contain" />
                             </div>
                           )}
                           {aiResponse ? (
@@ -447,3 +447,5 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
