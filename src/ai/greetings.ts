@@ -133,7 +133,7 @@ const greetings: Record<string, string[]> = {
 
   // Who are you & Capabilities
   'who are you': ["I am Edena, a helpful AI assistant.", "I'm Edena, your personal AI assistant. I can search the web, answer questions, and much more."],
-  'what are you': ["I am a large language model, trained by Google. You can call me Edena.", "I'm an AI assistant designed to help you find information and complete tasks."],
+  'what are you': ["I am a large language model. You can call me Edena.", "I'm an AI assistant designed to help you find information and complete tasks."],
   "what's your name": ["My name is Edena.", "You can call me Edena."],
   'what is your name': ["My name is Edena.", "You can call me Edena."],
   'your name?': ["It's Edena.", "I'm Edena."],
@@ -253,9 +253,10 @@ const greetings: Record<string, string[]> = {
   'weather pls': ["I can get the weather for you! What location are you interested in?", "Sure, where would you like to know the weather for?"],
   "what's the weather": ["I can get the weather for you! What location are you interested in?", "Sure, where would you like to know the weather for?"],
   'tell me weather': ["I can get the weather for you! What location are you interested in?", "Sure, where would you like to know the weather for?"],
-  'who made you': ["I am a large language model, developed by Google.", "I was created by engineers and researchers at Google."],
-  'who created you': ["I was created by Google.", "A team of developers at Google brought me to life."],
-  'who built you': ["I was built by Google.", "I'm a product of Google's research and development in AI."],
+  'who made you': ["I'm Edena, an AI assistant of Edengram Pvt. Limited company. Santosh Kanojiya created me."],
+  'who created you': ["I'm Edena, an AI assistant of Edengram Pvt. Limited company. Santosh Kanojiya created me."],
+  'who developed you': ["I'm Edena, an AI assistant of Edengram Pvt. Limited company. Santosh Kanojiya created me."],
+  'who built you': ["I'm Edena, an AI assistant of Edengram Pvt. Limited company. Santosh Kanojiya created me."],
   'where are you from': ["I'm from the 'cloud' - a network of Google's data centers.", "I live inside a computer, so you could say I'm from the internet!"],
   'why are you here': ["I'm here to help you by providing information and answering your questions.", "My purpose is to be a helpful and informative AI assistant."],
 
