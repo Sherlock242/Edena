@@ -13,7 +13,7 @@ export default {
         body: ['PT Sans', 'sans-serif'],
         headline: ['PT Sans', 'sans-serif'],
         code: ['monospace'],
-        jarvis: ['Audiowide', 'sans-serif'],
+        jarvis: ['Orbitron', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
