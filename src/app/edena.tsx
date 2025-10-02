@@ -21,7 +21,7 @@ type AppMode = 'search' | 'image';
 
 const EdengramLogo = ({ className, onClick, mode }: { className?: string; onClick?: (e: React.MouseEvent) => void; mode: AppMode }) => {
     const gradient = mode === 'image' 
-        ? 'from-orangered to-amber-500' 
+        ? 'from-orange-600 to-amber-500' 
         : 'from-cyan-400 to-primary';
     
     return (
