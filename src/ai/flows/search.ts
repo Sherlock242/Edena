@@ -61,7 +61,7 @@ const prompt = ai.definePrompt({
   tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool, snexengineTool],
   prompt: `You are a helpful AI assistant named Edena. Your goal is to provide concise and accurate answers to the user's query.
 
-You have access to several tools to help you answer questions. Based on the user's query, you can decide to use one of the tools to get the most up-to-date and relevant information.
+You have access to several tools to help you answer questions. Based on the user's query, you must decide to use one of the tools to get the most up-to-date and relevant information. For specific topics like "first battle of panipat", prefer a specialized tool like Wikipedia over a general web search.
 
 Query: {{{query}}}`,
 });
@@ -93,50 +93,36 @@ const performSearchFlow = ai.defineFlow(
             return { response: `(PA) ${dictResult}` };
         }
     } catch (e) {
-        console.warn("Targeted API call failed, proceeding to next level.", e);
+        console.warn("Targeted API call failed, proceeding to main AI flow.", e);
     }
     
-    // Level 4: Quick Search Race. Try both SnexEngine and DuckDuckGo and use whichever responds first.
-    try {
-        const raceWinner = await Promise.any([
-            snexengineTool(input).then(res => ({source: 'Snex', result: res})),
-            ddgSearchTool(input).then(res => ({source: 'Dgg', result: res}))
-        ]);
-        
-        if (isValidSearchResult(raceWinner.result)) {
-            return { response: `(${raceWinner.source}) ${raceWinner.result}` };
-        }
-    } catch (e) {
-        console.warn("Quick search race failed or returned no valid results, proceeding to main AI flow.", e);
-    }
-    
-    // Level 5: If the quick search fails or is insufficient, engage the full AI with all tools.
+    // Level 4: Engage the full AI with all tools. The AI is smart enough to choose the best tool.
     try {
       const {output} = await prompt(input);
-      if (output) {
+      if (output && isValidSearchResult(output.response)) {
         return { response: `(AI+API) ${output.response}` };
       }
-      throw new Error("Primary AI prompt failed to produce an output.");
+      throw new Error("Primary AI prompt failed to produce a valid output.");
     } catch(e) {
-        console.error("Primary search flow failed, attempting final fallback.", e);
-        // Level 6: Ultimate Fallback. If the main AI fails, try the search engines, then a forced tool search.
+        console.error("Primary search flow failed, attempting fallback search race.", e);
+        // Level 5: Fallback Search Race. If the main AI fails, try the search engines.
         try {
-            // First, try the search race again.
-            const fallbackRaceWinner = await Promise.any([
+            const raceWinner = await Promise.any([
                 snexengineTool(input).then(res => ({source: 'Snex', result: res})),
                 ddgSearchTool(input).then(res => ({source: 'Dgg', result: res}))
             ]);
-            if (isValidSearchResult(fallbackRaceWinner.result)) {
-                return { response: `(${fallbackRaceWinner.source}) ${fallbackRaceWinner.result}` };
+            
+            if (isValidSearchResult(raceWinner.result)) {
+                return { response: `(${raceWinner.source}) ${raceWinner.result}` };
             }
             throw new Error("Fallback search race was inconclusive.");
         } catch (fallbackError) {
+             // Level 6: Ultimate Fallback. Force the AI to use another tool.
             console.error("Fallback search race also failed, attempting final tool-based search.", fallbackError);
-            // If the search engines fail, try to force the AI to use another tool.
             try {
                 const finalAttemptInput = { query: "Search with a tool: " + input.query };
                 const { output } = await prompt(finalAttemptInput);
-                 if (output) {
+                 if (output && isValidSearchResult(output.response)) {
                     return { response: `(AI+API) ${output.response}` };
                 }
                 throw new Error("Final tool-based search attempt failed to produce an output.");
