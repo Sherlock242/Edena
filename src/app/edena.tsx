@@ -421,8 +421,11 @@ const AIConsciousnessPage = () => {
                       ) : (
                         <>
                           {generatedImageUrl && (
-                            <div className="mb-4 rounded-lg overflow-hidden border-2" style={{ borderColor: 'orangered' }}>
-                              <Image src={generatedImageUrl} alt="Generated image" width={200} height={200} className="object-contain" />
+                            <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[200px] h-[200px]" style={{ borderColor: 'orangered' }}>
+                              <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-cover" />
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/80 py-1 px-2 text-center">
+                                  <p className="text-white text-xs font-mono">edenaimagegeration.ai</p>
+                              </div>
                             </div>
                           )}
                           {aiResponse ? (
@@ -447,5 +450,7 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
 
     
