@@ -40,7 +40,7 @@ Input.displayName = 'Input';
 
 
 // --- Embedded Logo Component ---
-const EdengramLogo = ({ className }: { className?: string }) => {
+const EdengramLogo = ({ className, onClick }: { className?: string; onClick?: (e: React.MouseEvent) => void }) => {
     return (
         <motion.h1
           className={`font-jarvis text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-primary cursor-pointer ${className}`}
@@ -48,6 +48,7 @@ const EdengramLogo = ({ className }: { className?: string }) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
+          onClick={onClick}
         >
           EDENA
         </motion.h1>
@@ -185,7 +186,7 @@ const AIConsciousnessPage = () => {
     <>
       <div className="flex flex-col h-screen bg-black text-white p-4 overflow-hidden" onClick={handleContainerClick}>
         <header className="absolute top-0 left-0 right-0 p-4 z-10">
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-start w-full">
               <div className="relative flex items-center h-9 max-w-xs mr-4">
                 <AnimatePresence mode="wait">
                   {showSearch ? (
@@ -214,17 +215,12 @@ const AIConsciousnessPage = () => {
                       </form>
                     </motion.div>
                   ) : (
-                    <motion.div key="logo" exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}>
-                        <EdengramLogo />
+                    <motion.div key="logo" exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                        <EdengramLogo onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}/>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-              <Button asChild>
-                <Link href="/login">
-                    Sign In
-                </Link>
-              </Button>
           </div>
         </header>
 
