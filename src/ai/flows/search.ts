@@ -22,6 +22,7 @@ import { cricketTool } from '../tools/cricket';
 import { mediaSearchTool } from '../tools/media-search';
 import { spaceNewsTool } from '../tools/space-news';
 import { getGreetingResponse } from '../greetings';
+import { stripQueryPrefix } from '../prefixes';
 
 const PerformSearchInputSchema = z.object({
   query: z.string().describe('The search query from the user.'),
@@ -42,7 +43,11 @@ export async function performSearch(
   if (greetingResponse) {
     return { response: greetingResponse };
   }
-  return performSearchFlow(input);
+
+  const strippedQuery = stripQueryPrefix(input.query);
+  const finalQuery = strippedQuery || input.query;
+
+  return performSearchFlow({ query: finalQuery });
 }
 
 const prompt = ai.definePrompt({
