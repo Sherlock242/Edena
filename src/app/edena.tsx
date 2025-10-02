@@ -278,7 +278,15 @@ const AIConsciousnessPage = () => {
                             autoFocus
                           />
                           <Button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400 h-8 w-8">
-                              <Search size={20} />
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <defs>
+                                <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" style={{stopColor: 'hsl(var(--primary))', stopOpacity: 1}} />
+                                  <stop offset="100%" style={{stopColor: '#00BFFF', stopOpacity: 1}} />
+                                </linearGradient>
+                              </defs>
+                              <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="url(#icon-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
                           </Button>
                         </div>
                       </form>
@@ -380,3 +388,5 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
