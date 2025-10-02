@@ -38,33 +38,105 @@ const PerformSearchOutputSchema = z.object({
 export type PerformSearchOutput = z.infer<typeof PerformSearchOutputSchema>;
 
 // Helper to check for valid search results
-const isValidSearchResult = (result: string) => {
+const isValidSearchResult = (result: string | null | undefined): result is string => {
     if (!result) return false;
     const lowerResult = result.toLowerCase();
-    return !lowerResult.includes('no direct answer') && !lowerResult.includes("couldn't perform a web search") && !lowerResult.includes('no results found');
+    return !lowerResult.includes('no direct answer') && 
+           !lowerResult.includes("couldn't perform a web search") && 
+           !lowerResult.includes('no results found') &&
+           !lowerResult.includes('could not find') &&
+           !lowerResult.includes('encountered an error');
 }
 
+type ToolDefinition = {
+    tool: (input: any) => Promise<string>;
+    keywords: string[];
+    getInput: (query: string, keyword: string) => any;
+};
+
+// Define all specialized tools with their keywords and input processors.
+const specializedTools: ToolDefinition[] = [
+    {
+        tool: weatherTool,
+        keywords: ['weather in', 'forecast for', 'weather for'],
+        getInput: (query, keyword) => ({ location: query.substring(keyword.length).trim() }),
+    },
+    {
+        tool: dictionaryTool,
+        keywords: ['define', 'definition of', 'meaning of'],
+        getInput: (query, keyword) => ({ word: query.substring(keyword.length).trim() }),
+    },
+    {
+        tool: booksTool,
+        keywords: ['book about', 'books on', 'find book', 'search for book'],
+        getInput: (query, keyword) => ({ query: query.substring(keyword.length).trim() }),
+    },
+    {
+        tool: newsTool,
+        keywords: ['latest news', 'top stories', 'hacker news'],
+        getInput: () => ({}),
+    },
+    {
+        tool: cricketTool,
+        keywords: ['cricket score', 'cricket news', 'latest cricket'],
+        getInput: () => ({}),
+    },
+    {
+        tool: spaceNewsTool,
+        keywords: ['space news', 'latest space', 'astronomy news'],
+        getInput: () => ({}),
+    },
+    {
+        tool: youtubeTool,
+        keywords: ['youtube video on', 'find video on', 'search youtube for'],
+        getInput: (query, keyword) => ({ query: query.substring(keyword.length).trim() }),
+    },
+    {
+        tool: mediaSearchTool,
+        keywords: ['movie', 'tv show', 'anime'],
+        getInput: (query, keyword) => {
+            const category = keyword as 'movie' | 'tv show' | 'anime';
+            const justQuery = query.replace(keyword, '').trim();
+            return { query: justQuery, category: category === 'tv show' ? 'tv' : category };
+        },
+    },
+    {
+        tool: articlesTool,
+        keywords: ['article on', 'articles about', 'find article'],
+        getInput: (query, keyword) => ({ query: query.substring(keyword.length).trim() }),
+    }
+];
+
+
 /**
- * Tries to answer a query using a specific tool based on keywords.
- * Checks both the original query and a version with prefixes stripped.
+ * Tries to answer a query by matching it against specialized tool keywords.
+ * It checks the raw query and a version with common prefixes stripped.
  */
 async function tryDirectApiCall(originalQuery: string): Promise<string | null> {
-    const strippedQuery = stripQueryPrefix(originalQuery) || originalQuery;
-    const lowerQuery = strippedQuery.toLowerCase();
+    const queriesToCheck = [originalQuery];
+    const strippedQuery = stripQueryPrefix(originalQuery);
 
-    try {
-        if (lowerQuery.startsWith('weather in ')) {
-            const location = strippedQuery.substring('weather in '.length);
-            const result = await weatherTool({ location });
-            if (isValidSearchResult(result)) return `(PA) ${result}`;
+    if (strippedQuery && strippedQuery.toLowerCase() !== originalQuery.toLowerCase()) {
+        queriesToCheck.push(strippedQuery);
+    }
+    
+    for (const query of queriesToCheck) {
+        const lowerQuery = query.toLowerCase();
+        for (const { tool, keywords, getInput } of specializedTools) {
+            for (const keyword of keywords) {
+                if (lowerQuery.startsWith(keyword + ' ') || lowerQuery === keyword) {
+                    try {
+                        const input = getInput(query, keyword);
+                        const result = await tool(input);
+                        if (isValidSearchResult(result)) {
+                            return `(PA) ${result}`;
+                        }
+                    } catch (e) {
+                        console.warn(`Direct API call for '${keyword}' failed, proceeding.`, e);
+                    }
+                }
+            }
         }
-        if (lowerQuery.startsWith('define ')) {
-            const word = strippedQuery.substring('define '.length);
-            const result = await dictionaryTool({ word });
-            if (isValidSearchResult(result)) return `(PA) ${result}`;
-        }
-    } catch (e) {
-        console.warn("Direct API call failed, proceeding to next step.", e);
     }
     
     return null;
@@ -82,7 +154,7 @@ export async function performSearch(
     return { response: `(G) ${greetingResponse}` };
   }
   
-  // Level 2: Try a targeted API call.
+  // Level 2: Try a targeted API call (handles prefixes internally).
   const directApiResponse = await tryDirectApiCall(originalQuery);
   if (directApiResponse) {
       return { response: directApiResponse };
@@ -99,8 +171,7 @@ export async function performSearch(
   }
 
   // Level 4: If all direct methods fail, use the main AI flow.
-  const finalQuery = stripQueryPrefix(originalQuery) || originalQuery;
-  return performSearchFlow({ query: finalQuery });
+  return performSearchFlow({ query: originalQuery });
 }
 
 const prompt = ai.definePrompt({
