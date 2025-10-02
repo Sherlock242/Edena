@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -70,13 +71,26 @@ const performSearchFlow = ai.defineFlow(
   },
   async input => {
     try {
+        // First, try a quick direct search.
+        const ddgResult = await ddgSearchTool(input);
+        // A simple check to see if the result is a direct answer or a "not found" message.
+        if (ddgResult && !ddgResult.toLowerCase().includes('no direct answer') && !ddgResult.toLowerCase().includes('couldn\'t perform a web search')) {
+          // If we get a decent answer, return it immediately.
+          return { response: ddgResult };
+        }
+    } catch (e) {
+        console.warn("Initial DDG search failed, proceeding to main AI flow.", e);
+    }
+    
+    // If the quick search fails or doesn't provide a good answer, use the full AI.
+    try {
       const {output} = await prompt(input);
       if (output) {
         return output;
       }
       throw new Error("Primary prompt failed to produce an output.");
     } catch(e) {
-        console.error("Primary search flow failed, attempting fallback.", e);
+        console.error("Primary search flow failed, attempting final fallback.", e);
         // Fallback to a direct web search if the main prompt fails
         const fallbackResult = await ddgSearchTool(input);
         return { response: fallbackResult };
