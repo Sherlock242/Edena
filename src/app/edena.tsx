@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
 import { Slot } from '@radix-ui/react-slot';
+import { performSearch } from '@/ai/flows/search';
 
 // --- Embedded UI Components ---
 
@@ -122,11 +123,16 @@ const AIConsciousnessPage = () => {
     }
     setIsLoading(true);
     setAiResponse('');
-    // Mock AI response
-    setTimeout(() => {
-        speak(`Searching for "${query}"... but I can't connect right now.`);
-        setIsLoading(false);
-    }, 1500);
+    
+    try {
+      const result = await performSearch({ query });
+      speak(result.response);
+    } catch (error) {
+      console.error("AI Error:", error);
+      speak("I'm sorry, I'm having trouble connecting to my knowledge base right now.");
+    } finally {
+      setIsLoading(false);
+    }
   }, [speak]);
 
   const handleListen = () => {
