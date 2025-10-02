@@ -16,6 +16,7 @@ import {dictionaryTool} from '../tools/dictionary';
 import {booksTool} from '../tools/books';
 import {newsTool} from '../tools/news';
 import { youtubeTool } from '../tools/youtube';
+import { ddgSearchTool } from '../tools/ddg-search';
 
 const PerformSearchInputSchema = z.object({
   query: z.string().describe('The search query from the user.'),
@@ -39,7 +40,7 @@ const prompt = ai.definePrompt({
   name: 'performSearchPrompt',
   input: {schema: PerformSearchInputSchema},
   output: {schema: PerformSearchOutputSchema},
-  tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool],
+  tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool],
   prompt: `You are a helpful AI assistant named Edena. Your goal is to provide concise and accurate answers to the user's query.
 
 You have access to several tools to help you answer questions. Based on the user's query, you can decide to use one of the tools to get the most up-to-date and relevant information.
