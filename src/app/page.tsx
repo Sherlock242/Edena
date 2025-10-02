@@ -1,5 +1,5 @@
-import HomePage from '@/app/edena';
+import Edena from './edena';
 
-export default function Home() {
-  return <HomePage />;
+export default function HomePage() {
+  return <Edena />;
 }

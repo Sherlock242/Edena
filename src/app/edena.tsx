@@ -1,148 +1,284 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
-// EdengramLogo component is now defined directly inside this file
+// --- Embedded UI Components ---
+
+const Button = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>(({ className, ...props }, ref) => {
+  return (
+    <button
+      className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-white hover:no-underline hover:text-cyan-400 p-0 h-auto ${className}`}
+      ref={ref}
+      {...props}
+    />
+  );
+});
+Button.displayName = 'Button';
+
+const Input = React.forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement>
+>(({ className, ...props }, ref) => {
+  return (
+    <input
+      className={`flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm ${className}`}
+      ref={ref}
+      {...props}
+    />
+  );
+});
+Input.displayName = 'Input';
+
+
+// --- Embedded Logo Component ---
 const EdengramLogo = ({ className }: { className?: string }) => {
     return (
-        <svg 
-            viewBox="0 0 100 100" 
-            className={cn("h-16 w-16", className)}
-            xmlns="http://www.w3.org/2000/svg"
+        <motion.h1
+          className={`font-jarvis text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-primary cursor-pointer ${className}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
-            <defs>
-                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{stopColor: '#8A2BE2', stopOpacity:1}} />
-                    <stop offset="50%" style={{stopColor: '#FF1493', stopOpacity:1}} />
-                    <stop offset="100%" style={{stopColor: '#00BFFF', stopOpacity:1}} />
-                </linearGradient>
-            </defs>
-            <motion.path 
-                d="M 20 20 L 80 20 L 80 80 L 20 80 Z" 
-                stroke="url(#grad1)" 
-                strokeWidth="8"
-                fill="none"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 1.5, ease: "easeInOut" }}
-            />
-             <motion.path 
-                d="M 35 35 L 65 35 L 65 65 L 35 65 Z" 
-                stroke="url(#grad1)" 
-                strokeWidth="6"
-                fill="none"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 1.5, ease: "easeInOut", delay: 0.5 }}
-            />
-        </svg>
+          EDENA
+        </motion.h1>
     )
 };
 
 
-const HomePage = () => {
-  // All the necessary CSS styles are embedded here
-  const pageStyles = `
-    body {
-      font-family: Arial, Helvetica, sans-serif;
+const AIConsciousnessPage = () => {
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [aiResponse, setAiResponse] = useState("Hello there! How can I help you search for information today?");
+  const [dots, setDots] = useState('');
+  const [isAngry, setIsAngry] = useState(false);
+  const [isBlushing, setIsBlushing] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+
+  const searchFormRef = useRef<HTMLFormElement>(null);
+  const orbRef = useRef<HTMLDivElement>(null);
+
+  const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
+    // Mock functionality since speech synthesis is browser-dependent
+    console.log(`Speaking: ${text}`);
+    setIsSpeaking(true);
+    setAiResponse(text);
+    if (angryMode) setIsAngry(true);
+    if (blushingMode) setIsBlushing(true);
+    setTimeout(() => {
+        setIsSpeaking(false);
+        if (angryMode) setIsAngry(false);
+        if (blushingMode) setIsBlushing(false);
+    }, 3000); // Simulate speech duration
+  }, []);
+
+  const processQuery = useCallback(async (query: string) => {
+    if (!query) {
+        speak("I didn't catch that. What would you like to search for?");
+        return;
     }
-    :root {
-      --background: 0 0% 0%;
-      --foreground: 0 0% 100%;
-      --card: 240 4% 9%;
-      --card-foreground: 0 0% 100%;
-      --popover: 240 4% 9%;
-      --popover-foreground: 0 0% 100%;
-      --primary: 260 85% 60%;
-      --primary-foreground: 0 0% 100%;
-      --secondary: 220 20% 15%;
-      --secondary-foreground: 0 0% 100%;
-      --muted: 240 4% 18%;
-      --muted-foreground: 0 0% 63%;
-      --accent: 260 85% 60%;
-      --accent-foreground: 0 0% 100%;
-      --destructive: 0 84.2% 60.2%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 240 4% 25%;
-      --input: 240 4% 25%;
-      --ring: 260 85% 60%;
-      --radius: 0.5rem;
+    setIsLoading(true);
+    setAiResponse('');
+    // Mock AI response
+    setTimeout(() => {
+        speak(`Searching for "${query}"... but I can't connect right now.`);
+        setIsLoading(false);
+    }, 1500);
+  }, [speak]);
+
+  const handleListen = () => {
+    if (isSpeaking) {
+        setIsSpeaking(false);
+        setIsAngry(false);
+        setIsBlushing(false);
+        return;
     }
-    .dark {
-      --background: 0 0% 0%;
-      --foreground: 0 0% 100%;
-      --card: 240 4% 9%;
-      --card-foreground: 0 0% 100%;
-      --popover: 240 4% 9%;
-      --popover-foreground: 0 0% 100%;
-      --primary: 260 85% 60%;
-      --primary-foreground: 0 0% 100%;
-      --secondary: 220 20% 15%;
-      --secondary-foreground: 0 0% 100%;
-      --muted: 240 4% 18%;
-      --muted-foreground: 0 0% 63%;
-      --accent: 260 85% 60%;
-      --accent-foreground: 0 0% 100%;
-      --destructive: 0 62.8% 30.6%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 240 4% 25%;
-      --input: 240 4% 25%;
-      --ring: 260 85% 60%;
+    if (isListening) {
+      setIsListening(false);
+      return;
     }
-    * {
-      border-color: hsl(var(--border));
+    setIsListening(true);
+    setAiResponse('');
+    // Mock listening
+    setTimeout(() => {
+        setIsListening(false);
+        processQuery("a sample voice query");
+    }, 3000);
+  };
+
+  const handleManualSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchText.trim()) {
+      processQuery(searchText.trim());
+      setSearchText('');
     }
-    body {
-      background-color: hsl(var(--background));
-      color: hsl(var(--foreground));
+    setShowSearch(false);
+  };
+  
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as Node;
+    if (showSearch && searchFormRef.current && !searchFormRef.current.contains(target) && orbRef.current && !orbRef.current.contains(target)) {
+      setShowSearch(false);
     }
-    .font-jarvis {
-        font-family: 'Orbitron', sans-serif;
-    }
-  `;
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => (prev.length >= 3 ? '' : prev + '.'));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const ring1Color = isAngry ? 'rgba(255, 69, 0, 0.5)' : (isBlushing ? 'rgba(255, 182, 193, 0.5)' : 'rgba(0, 255, 255, 0.5)');
+  const ring2Color = isAngry ? 'rgba(255, 69, 0, 0.6)' : (isBlushing ? 'rgba(255, 182, 193, 0.6)' : 'rgba(0, 255, 255, 0.6)');
+  const ring3Color = isAngry ? 'rgba(255, 69, 0, 0.7)' : (isBlushing ? 'rgba(255, 182, 193, 0.7)' : 'rgba(0, 255, 255, 0.7)');
+  const orbGradient = isAngry 
+    ? 'linear-gradient(to bottom right, orangered, #FF8C00)' 
+    : (isBlushing ? 'linear-gradient(to bottom right, #FFC0CB, #FFB6C1)' : 'linear-gradient(to bottom right, hsl(var(--primary)), #00BFFF)');
+  const orbBoxShadow = isAngry
+    ? '0 0 30px orangered, 0 0 15px #FF8C00'
+    : (isBlushing ? '0 0 30px #FFC0CB, 0 0 15px #FFB6C1)' : '0 0 30px #0ff, 0 0 15px hsl(var(--primary))');
 
   return (
     <>
-      <style>{pageStyles}</style>
-      <div className="flex flex-col h-screen bg-background text-foreground p-4 overflow-hidden items-center justify-center">
-          <header className="absolute top-0 left-0 right-0 p-4 z-10">
-              <div className="flex items-center justify-between w-full">
-                  <h1 className="font-jarvis text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-primary">
-                      EDENA
-                  </h1>
-                  <Button asChild variant="link" className="text-white hover:no-underline hover:text-cyan-400 transition-colors duration-300 p-0 h-auto">
-                      <Link href="/login">
-                          Sign In
-                      </Link>
-                  </Button>
+      <div className="flex flex-col h-screen bg-black text-white p-4 overflow-hidden" onClick={handleContainerClick}>
+        <header className="absolute top-0 left-0 right-0 p-4 z-10">
+          <div className="flex items-center justify-between w-full">
+              <div className="relative flex items-center h-9 max-w-xs mr-4">
+                <AnimatePresence mode="wait">
+                  {showSearch ? (
+                    <motion.div
+                      key="search"
+                      initial={{ width: 0, opacity: 0 }}
+                      animate={{ width: '100%', opacity: 1 }}
+                      exit={{ width: 0, opacity: 0 }}
+                      transition={{ duration: 0.5, ease: 'easeInOut' }}
+                      className="overflow-hidden w-full"
+                    >
+                      <form onSubmit={handleManualSearch} ref={searchFormRef} className="flex items-center w-full">
+                        <div className="relative flex-grow">
+                          <Input
+                            type="text"
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            placeholder="Search..."
+                            className="w-full bg-transparent border-0 border-b-2 border-cyan-400/50 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400 text-white pl-0 pr-8"
+                            autoFocus
+                          />
+                          <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400/70 hover:text-cyan-400 h-8 w-8">
+                              <Search size={20} />
+                          </Button>
+                        </div>
+                      </form>
+                    </motion.div>
+                  ) : (
+                    <div onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}>
+                        <EdengramLogo />
+                    </div>
+                  )}
+                </AnimatePresence>
               </div>
-          </header>
-
-          <motion.div
-              className="flex flex-col items-center justify-center text-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-          >
-              <EdengramLogo className="h-24 w-24 mb-6" />
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">Welcome to Edengram</h2>
-              <p className="text-muted-foreground max-w-xl mx-auto mb-8">
-                  Your journey to creating and sharing interactive and expressive content starts here.
-              </p>
-              <Button asChild size="lg">
-                  <Link href="/mood">
-                      Get Started
-                  </Link>
+              <Button asChild variant="link">
+                <Link href="/login">
+                    Sign In
+                </Link>
               </Button>
+          </div>
+        </header>
+
+        <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+          <motion.div
+            layout
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            ref={orbRef}
+            className="relative flex items-center justify-center w-[40vw] h-[40vw] md:w-[25vw] md:h-[25vw] max-w-[300px] max-h-[300px] min-w-[240px] min-h-[240px] cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); handleListen(); }}
+          >
+              <AnimatePresence>
+                  {[...Array(20)].map((_, i) => (
+                      <motion.div
+                          key={`particle-${i}`}
+                          className="absolute bg-cyan-400/50 rounded-full"
+                          style={{
+                              width: `${Math.random() * 2 + 1}px`,
+                              height: `${Math.random() * 2 + 1}px`,
+                              top: '50%',
+                              left: '50%',
+                          }}
+                          initial={{
+                              x: (Math.random() - 0.5) * 220,
+                              y: (Math.random() - 0.5) * 220,
+                              scale: 0,
+                          }}
+                          animate={{ scale: [0, 1, 0] }}
+                          transition={{
+                              duration: Math.random() * 2 + 2,
+                              repeat: Infinity,
+                              delay: Math.random() * 4,
+                              ease: 'easeInOut'
+                          }}
+                      />
+                  ))}
+              </AnimatePresence>
+
+              <motion.svg className="absolute w-[50%] h-[50%]" viewBox="0 0 300 300" initial={{rotate: 20}} animate={{ rotate: 380 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}>
+                  <motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring1Color} strokeWidth="3" strokeDasharray="68.4 20" transition={{duration: 0.3}} />
+              </motion.svg>
+              
+              <motion.svg className="absolute w-[65%] h-[65%]" viewBox="0 0 300 300" initial={{rotate: -50}} animate={{ rotate: -410 }} transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}>
+                  <motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring2Color} strokeWidth="4" strokeDasharray="150 40 80 110" transition={{duration: 0.3}} />
+              </motion.svg>
+              
+              <motion.svg className="absolute w-full h-full" viewBox="0 0 300 300" initial={{rotate: 90}} animate={{ rotate: 450 }} transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}>
+                  <motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring3Color} strokeWidth="5" strokeDasharray="100 80 50 120 130" transition={{duration: 0.3}} />
+              </motion.svg>
+              
+              <motion.div
+                  className="absolute w-[30%] h-[30%] rounded-full"
+                  style={{ background: orbGradient }}
+                  animate={{
+                      scale: isListening || isSpeaking ? 1.1 : 1,
+                      boxShadow: orbBoxShadow,
+                  }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 15, duration: 0.3 }}
+              />
           </motion.div>
+
+          <div className="text-center mt-8 min-h-[4rem] flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                  <motion.div
+                      key={isLoading ? 'loader' : aiResponse}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-[90vw] md:w-auto"
+                  >
+                      {isLoading ? (
+                          <p className="text-lg text-cyan-400">Thinking{dots}</p>
+                      ) : isListening ? (
+                          <p className="text-lg text-cyan-400">Listening{dots}</p>
+                      ) : aiResponse ? (
+                          <p className="text-lg text-center md:max-w-md">{aiResponse}</p>
+                      ) : (
+                          <p className="text-gray-400">Click the orb to start a voice search.</p>
+                      )}
+                  </motion.div>
+              </AnimatePresence>
+          </div>
+        </div>
       </div>
     </>
   );
 };
 
-export default HomePage;
+export default AIConsciousnessPage;
