@@ -40,13 +40,13 @@ export type PerformSearchOutput = z.infer<typeof PerformSearchOutputSchema>;
 export async function performSearch(
   input: PerformSearchInput
 ): Promise<PerformSearchOutput> {
-  // Level 1: Check for simple greetings first.
+  // Level 1: Check for simple greetings first. This is instant and local.
   const greetingResponse = getGreetingResponse(input.query);
   if (greetingResponse) {
     return { response: greetingResponse };
   }
 
-  // Level 2: Strip common prefixes to get a cleaner query.
+  // Level 2: Strip common prefixes to get a cleaner query for all subsequent steps.
   const strippedQuery = stripQueryPrefix(input.query);
   const finalQuery = strippedQuery || input.query;
 
@@ -72,30 +72,35 @@ const performSearchFlow = ai.defineFlow(
     outputSchema: PerformSearchOutputSchema,
   },
   async input => {
-    // Level 3: First, try a quick direct web search.
+    // Level 3: First, try a quick direct web search. This is a fast, free API call.
     try {
         const ddgResult = await ddgSearchTool(input);
-        // A simple check to see if the result is a direct answer or a "not found" message.
+        // A simple check to see if the result is a direct answer and not a "not found" message.
         if (ddgResult && !ddgResult.toLowerCase().includes('no direct answer') && !ddgResult.toLowerCase().includes('couldn\'t perform a web search')) {
-          // If we get a decent answer, return it immediately.
+          // If we get a good enough answer, return it immediately to save costs.
           return { response: ddgResult };
         }
     } catch (e) {
-        console.warn("Initial DDG search failed, proceeding to main AI flow.", e);
+        console.warn("Initial DuckDuckGo search failed, proceeding to main AI flow.", e);
     }
     
-    // Level 4: If the quick search fails or doesn't provide a good answer, use the full AI.
+    // Level 4: If the quick search fails or is insufficient, engage the full AI with all tools.
     try {
       const {output} = await prompt(input);
       if (output) {
         return output;
       }
-      throw new Error("Primary prompt failed to produce an output.");
+      throw new Error("Primary AI prompt failed to produce an output.");
     } catch(e) {
         console.error("Primary search flow failed, attempting final fallback.", e);
-        // Level 5: Fallback to a direct web search if the main prompt fails
-        const fallbackResult = await ddgSearchTool(input);
-        return { response: fallbackResult };
+        // Level 5: Final Fallback. If the main AI fails (e.g., quota), use a direct web search as a safety net.
+        try {
+            const fallbackResult = await ddgSearchTool(input);
+            return { response: fallbackResult };
+        } catch (fallbackError) {
+            console.error("Final fallback search also failed.", fallbackError);
+            return { response: "I'm sorry, but I'm having trouble connecting to all of my information sources right now. Please try again in a moment." };
+        }
     }
   }
 );
