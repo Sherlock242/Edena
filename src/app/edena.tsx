@@ -273,7 +273,7 @@ const AIConsciousnessPage = () => {
                   )}
                 </AnimatePresence>
               </div>
-              <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:text-cyan-300">
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:text-cyan-300 hover:bg-transparent">
                 <Menu className="text-cyan-400" />
               </Button>
           </div>
@@ -371,5 +371,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
