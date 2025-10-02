@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search } from 'lucide-react';
-import Link from 'next/link';
 import { Slot } from '@radix-ui/react-slot';
 import { performSearch } from '@/ai/flows/search';
 
@@ -103,18 +102,33 @@ const AIConsciousnessPage = () => {
   }, [isClient]);
 
   const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
-    // Mock functionality since speech synthesis is browser-dependent
-    console.log(`Speaking: ${text}`);
+    if (!isClient || !window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel(); // Cancel any previous speech
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    
     setIsSpeaking(true);
     setAiResponse(text);
     if (angryMode) setIsAngry(true);
     if (blushingMode) setIsBlushing(true);
-    setTimeout(() => {
-        setIsSpeaking(false);
-        if (angryMode) setIsAngry(false);
-        if (blushingMode) setIsBlushing(false);
-    }, 3000); // Simulate speech duration
-  }, []);
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setIsAngry(false);
+      setIsBlushing(false);
+    };
+
+    utterance.onerror = (event) => {
+      console.error("SpeechSynthesis Error:", event.error);
+      setIsSpeaking(false);
+      setIsAngry(false);
+      setIsBlushing(false);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }, [isClient]);
+
 
   const processQuery = useCallback(async (query: string) => {
     if (!query) {
@@ -137,6 +151,7 @@ const AIConsciousnessPage = () => {
 
   const handleListen = () => {
     if (isSpeaking) {
+        window.speechSynthesis.cancel();
         setIsSpeaking(false);
         setIsAngry(false);
         setIsBlushing(false);
@@ -211,7 +226,7 @@ const AIConsciousnessPage = () => {
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder="Search..."
-                            className="w-full bg-transparent border-0 border-b-2 !border-cyan-400 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 text-white pl-0 pr-8"
+                            className="w-full bg-transparent border-0 border-b-2 border-cyan-400 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 text-white pl-0 pr-8"
                             autoFocus
                           />
                           <Button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400/70 hover:text-cyan-400 h-8 w-8">
