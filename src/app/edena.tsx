@@ -140,25 +140,28 @@ const AIConsciousnessPage = () => {
 
   const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
     if (!isClient || !window.speechSynthesis) return;
-
+  
     window.speechSynthesis.cancel(); // Cancel any previous speech
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    setIsSpeaking(true);
+  
+    // Display the full text with source code in the UI
     setAiResponse(text);
+  
+    // Remove the source code prefix for speech
+    const textToSpeak = text.replace(/^\(\w+(\+\w+)?\)\s*/, '');
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+  
+    setIsSpeaking(true);
     if (angryMode) setIsAngry(true);
     if (blushingMode) setIsBlushing(true);
-
+  
     utterance.onend = () => {
       setIsSpeaking(false);
       setIsAngry(false);
       setIsBlushing(false);
     };
-
+  
     utterance.onerror = (event) => {
       if (event.error === 'interrupted') {
-        // This is expected when we interrupt speech, so we don't log it as an error.
         console.log("Speech interrupted.");
       } else {
         console.error("SpeechSynthesis Error:", event.error);
@@ -167,7 +170,7 @@ const AIConsciousnessPage = () => {
       setIsAngry(false);
       setIsBlushing(false);
     };
-
+  
     window.speechSynthesis.speak(utterance);
   }, [isClient]);
 
@@ -381,3 +384,4 @@ export default AIConsciousnessPage;
     
 
     
+
