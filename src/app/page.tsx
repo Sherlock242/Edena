@@ -1,5 +1,5 @@
-import { IdeaCanvas } from '@/components/idea-canvas';
+import HomePage from '@/app/edena';
 
 export default function Home() {
-  return <IdeaCanvas />;
+  return <HomePage />;
 }
