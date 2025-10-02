@@ -38,6 +38,40 @@ const PerformSearchOutputSchema = z.object({
 
 export type PerformSearchOutput = z.infer<typeof PerformSearchOutputSchema>;
 
+// Helper to check for valid search results
+const isValidSearchResult = (result: string) => {
+    if (!result) return false;
+    const lowerResult = result.toLowerCase();
+    return !lowerResult.includes('no direct answer') && !lowerResult.includes("couldn't perform a web search") && !lowerResult.includes('no results found');
+}
+
+/**
+ * Tries to answer a query using a specific tool based on keywords.
+ * Checks both the original query and a version with prefixes stripped.
+ */
+async function tryDirectApiCall(originalQuery: string): Promise<string | null> {
+    const strippedQuery = stripQueryPrefix(originalQuery) || originalQuery;
+    const lowerQuery = strippedQuery.toLowerCase();
+
+    try {
+        if (lowerQuery.startsWith('weather in ')) {
+            const location = strippedQuery.substring('weather in '.length);
+            const result = await weatherTool({ location });
+            if (isValidSearchResult(result)) return `(PA) ${result}`;
+        }
+        if (lowerQuery.startsWith('define ')) {
+            const word = strippedQuery.substring('define '.length);
+            const result = await dictionaryTool({ word });
+            if (isValidSearchResult(result)) return `(PA) ${result}`;
+        }
+    } catch (e) {
+        console.warn("Direct API call failed, proceeding to main flow.", e);
+    }
+    
+    return null;
+}
+
+
 export async function performSearch(
   input: PerformSearchInput
 ): Promise<PerformSearchOutput> {
@@ -47,10 +81,14 @@ export async function performSearch(
     return { response: `(G) ${greetingResponse}` };
   }
 
-  // Level 2: Strip common prefixes to get a cleaner query for all subsequent steps.
-  const strippedQuery = stripQueryPrefix(input.query);
-  const finalQuery = strippedQuery || input.query;
+  // Level 3 (was 2): Try a targeted API call first, with and without prefixes.
+  const directApiResponse = await tryDirectApiCall(input.query);
+  if (directApiResponse) {
+      return { response: directApiResponse };
+  }
 
+  // Pass the original query to the main flow, which handles prefix stripping internally.
+  const finalQuery = stripQueryPrefix(input.query) || input.query;
   return performSearchFlow({ query: finalQuery });
 }
 
@@ -66,12 +104,6 @@ You have access to several tools to help you answer questions. Based on the user
 Query: {{{query}}}`,
 });
 
-// Helper function to check for valid search results
-const isValidSearchResult = (result: string) => {
-    if (!result) return false;
-    const lowerResult = result.toLowerCase();
-    return !lowerResult.includes('no direct answer') && !lowerResult.includes("couldn't perform a web search") && !lowerResult.includes('no results found');
-}
 
 const performSearchFlow = ai.defineFlow(
   {
@@ -80,22 +112,6 @@ const performSearchFlow = ai.defineFlow(
     outputSchema: PerformSearchOutputSchema,
   },
   async input => {
-    // Level 3: Targeted single-API check for very direct queries
-    try {
-        if (input.query.toLowerCase().startsWith('weather in ')) {
-            const location = input.query.substring('weather in '.length);
-            const weatherResult = await weatherTool({ location });
-            return { response: `(PA) ${weatherResult}` };
-        }
-        if (input.query.toLowerCase().startsWith('define ')) {
-            const word = input.query.substring('define '.length);
-            const dictResult = await dictionaryTool({ word });
-            return { response: `(PA) ${dictResult}` };
-        }
-    } catch (e) {
-        console.warn("Targeted API call failed, proceeding to main AI flow.", e);
-    }
-    
     // Level 4: Engage the full AI with all tools. The AI is smart enough to choose the best tool.
     try {
       const {output} = await prompt(input);
