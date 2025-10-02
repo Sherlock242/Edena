@@ -36,7 +36,7 @@ const PerformSearchOutputSchema = z.object({
   response: z.string().describe('The AI-generated answer to the search query.'),
 });
 
-export type PerformSearchOutput = z.infer<typeof PerformSearchOutputSchema>;
+export type PerformSearchOutput = zinfer<typeof PerformSearchOutputSchema>;
 
 // Helper to check for valid search results
 const isValidSearchResult = (result: string) => {
@@ -65,7 +65,7 @@ async function tryDirectApiCall(originalQuery: string): Promise<string | null> {
             if (isValidSearchResult(result)) return `(PA) ${result}`;
         }
     } catch (e) {
-        console.warn("Direct API call failed, proceeding to main flow.", e);
+        console.warn("Direct API call failed, proceeding to next step.", e);
     }
     
     return null;
@@ -75,20 +75,42 @@ async function tryDirectApiCall(originalQuery: string): Promise<string | null> {
 export async function performSearch(
   input: PerformSearchInput
 ): Promise<PerformSearchOutput> {
-  // Level 1: Check for simple greetings first. This is instant and local.
-  const greetingResponse = getGreetingResponse(input.query);
+  const originalQuery = input.query;
+
+  // Level 1: Check for simple greetings first.
+  const greetingResponse = getGreetingResponse(originalQuery);
   if (greetingResponse) {
     return { response: `(G) ${greetingResponse}` };
   }
 
-  // Level 3 (was 2): Try a targeted API call first, with and without prefixes.
-  const directApiResponse = await tryDirectApiCall(input.query);
+  // Level 2: Try SnexEngine search first.
+  try {
+    const snexResult = await snexengineTool({ query: originalQuery });
+    if (isValidSearchResult(snexResult)) {
+        return { response: `(Snex) ${snexResult}` };
+    }
+  } catch (e) {
+      console.warn("SnexEngine search failed, proceeding to next step.", e);
+  }
+
+  // Level 3: Try DuckDuckGo search if SnexEngine fails.
+  try {
+      const ddgResult = await ddgSearchTool({ query: originalQuery });
+      if (isValidSearchResult(ddgResult)) {
+          return { response: `(Dgg) ${ddgResult}` };
+      }
+  } catch (e) {
+      console.warn("DDG search failed, proceeding to next step.", e);
+  }
+
+  // Level 4: Try a targeted API call.
+  const directApiResponse = await tryDirectApiCall(originalQuery);
   if (directApiResponse) {
       return { response: directApiResponse };
   }
 
-  // Pass the original query to the main flow, which handles prefix stripping internally.
-  const finalQuery = stripQueryPrefix(input.query) || input.query;
+  // Level 5: If all direct methods fail, use the main AI flow.
+  const finalQuery = stripQueryPrefix(originalQuery) || originalQuery;
   return performSearchFlow({ query: finalQuery });
 }
 
@@ -112,7 +134,7 @@ const performSearchFlow = ai.defineFlow(
     outputSchema: PerformSearchOutputSchema,
   },
   async input => {
-    // Level 4: Engage the full AI with all tools. The AI is smart enough to choose the best tool.
+    // This flow is now the main AI-powered step (Level 5) and contains the final fallbacks.
     try {
       const {output} = await prompt(input);
       if (output && isValidSearchResult(output.response)) {
@@ -121,7 +143,7 @@ const performSearchFlow = ai.defineFlow(
       throw new Error("Primary AI prompt failed to produce a valid output.");
     } catch(e) {
         console.error("Primary search flow failed, attempting fallback search race.", e);
-        // Level 5: Fallback Search Race. If the main AI fails, try the search engines.
+        // Fallback: Race SnexEngine and DDG again as a safety net.
         try {
             const raceWinner = await Promise.any([
                 snexengineTool(input).then(res => ({source: 'Snex', result: res})),
@@ -133,7 +155,7 @@ const performSearchFlow = ai.defineFlow(
             }
             throw new Error("Fallback search race was inconclusive.");
         } catch (fallbackError) {
-             // Level 6: Ultimate Fallback. Force the AI to use another tool.
+             // Final Fallback: Force the AI to use another tool.
             console.error("Fallback search race also failed, attempting final tool-based search.", fallbackError);
             try {
                 const finalAttemptInput = { query: "Search with a tool: " + input.query };
