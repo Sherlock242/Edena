@@ -38,7 +38,7 @@ const generateImageFlow = ai.defineFlow(
   async input => {
     const {media} = await ai.generate({
       model: 'googleai/imagen-4.0-fast-generate-001',
-      prompt: input.prompt,
+      prompt: `Generate a high-quality, photorealistic image based on the following description: ${input.prompt}`,
     });
 
     if (!media.url) {

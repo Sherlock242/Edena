@@ -14,7 +14,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 
 
@@ -141,7 +140,6 @@ const AIConsciousnessPage = () => {
     const source = sourceMatch ? sourceMatch[1] : '';
     const textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
     
-    resetState();
     setAiResponse(textToSpeak);
     setAiResponseSource(source);
 
@@ -169,12 +167,12 @@ const AIConsciousnessPage = () => {
     };
 
     window.speechSynthesis.speak(utterance);
-  }, [isClient, resetState]);
+  }, [isClient]);
 
 
   const processQuery = useCallback(async (query: string) => {
     if (!query) {
-        speak("I didn't catch that. What would you like to search for?");
+        speak("I didn't catch that. What would you like to do?");
         return;
     }
     resetState();
@@ -190,7 +188,11 @@ const AIConsciousnessPage = () => {
       }
     } catch (error) {
       console.error("AI Error:", error);
-      speak(`I'm sorry, I'm having trouble connecting to my ${appMode} knowledge base right now.`);
+      if (appMode === 'image') {
+        speak("I'm sorry, I couldn't create that image. The generation model might be unavailable or the prompt may have been blocked.");
+      } else {
+        speak("I'm sorry, I'm having trouble connecting to my knowledge base right now.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -238,11 +240,12 @@ const AIConsciousnessPage = () => {
   
   const handleModeChange = (mode: AppMode) => {
     setAppMode(mode);
+    resetState();
     const defaultText = mode === 'search' 
       ? "I am Edena, ready for search. How can I help?"
       : "Image generation activated. What would you like me to create?";
     speak(defaultText);
-    resetState();
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -293,7 +296,7 @@ const AIConsciousnessPage = () => {
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder={appMode === 'search' ? 'Search...' : 'Describe an image...'}
-                            className="w-full bg-transparent border-0 border-b-2 border-cyan-400 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            className="w-full bg-transparent border-0 border-b-2 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                             style={{ borderColor: isImageMode ? 'orangered' : 'hsl(var(--primary))' }}
                             autoFocus
                           />
