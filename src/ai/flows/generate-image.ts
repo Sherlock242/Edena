@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import fetch from 'node-fetch';
 
 const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt for image generation.'),
@@ -35,22 +36,26 @@ const generateImageFlow = ai.defineFlow(
     inputSchema: GenerateImageInputSchema,
     outputSchema: GenerateImageOutputSchema,
   },
-  async input => {
-    // Switching to a more accessible public model for image generation.
-    const {media} = await ai.generate({
-      model: 'googleai/gemini-1.5-flash-latest',
-      prompt: `Generate a high-quality, photorealistic image based on the following description: ${input.prompt}`,
-       config: {
-        responseModalities: ['IMAGE'],
-      },
-    });
+  async (input) => {
+    try {
+      // Using a public, non-Google, free image generation API.
+      const response = await fetch('https://image.pollinations.ai/prompt/' + encodeURIComponent(input.prompt));
 
-    if (!media.url) {
-      throw new Error('Image generation failed to produce an image.');
+      if (!response.ok) {
+        throw new Error(`Image generation failed with status: ${response.status}`);
+      }
+
+      const imageBuffer = await response.buffer();
+      const base64Image = imageBuffer.toString('base64');
+      const mimeType = response.headers.get('content-type') || 'image/jpeg';
+      const imageUrl = `data:${mimeType};base64,${base64Image}`;
+
+      return {
+        imageUrl: imageUrl,
+      };
+    } catch (error) {
+       console.error("Image generation error:", error);
+       throw new Error('Failed to generate image from the public API.');
     }
-
-    return {
-      imageUrl: media.url,
-    };
   }
 );
