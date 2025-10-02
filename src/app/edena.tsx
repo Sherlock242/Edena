@@ -269,8 +269,8 @@ const AIConsciousnessPage = () => {
   const particleColor = isImageMode ? 'bg-amber-500/50' : 'bg-cyan-400/50';
   const iconColor = isImageMode ? 'orangered' : 'cyan-400';
   const iconGradientId = isImageMode ? 'icon-gradient-image' : 'icon-gradient-search';
-  const iconStop1 = isImageMode ? 'orangered' : 'hsl(var(--primary))';
-  const iconStop2 = isImageMode ? '#FF8C00' : '#00BFFF';
+  const iconStop1 = isImageMode ? 'orangered' : '#00BFFF';
+  const iconStop2 = isImageMode ? '#FF8C00' : 'hsl(var(--primary))';
 
 
   return (
@@ -439,3 +439,5 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
