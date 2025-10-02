@@ -249,7 +249,7 @@ const AIConsciousnessPage = () => {
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder="Search..."
-                            className="w-full bg-transparent border-b-2 border-cyan-400 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            className="w-full bg-transparent border-0 border-b-2 border-cyan-400 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                             autoFocus
                           />
                           <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-400 h-8 w-8">
@@ -327,8 +327,8 @@ const AIConsciousnessPage = () => {
               </motion.svg>
               
               <motion.div
-                  className="absolute w-[30%] h-[30%] rounded-full"
-                  style={{ background: orbGradient }}
+                  className="absolute w-[30%] h-[30%]"
+                  style={{ background: orbGradient, borderRadius: '50%' }}
                   animate={{
                       scale: isListening || isSpeaking ? 1.1 : 1,
                       boxShadow: orbBoxShadow,
