@@ -72,6 +72,7 @@ const AIConsciousnessPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [aiResponse, setAiResponse] = useState("Hello there! How can I help you search for information today?");
+  const [aiResponseSource, setAiResponseSource] = useState('');
   const [dots, setDots] = useState('');
   const [isAngry, setIsAngry] = useState(false);
   const [isBlushing, setIsBlushing] = useState(false);
@@ -140,37 +141,39 @@ const AIConsciousnessPage = () => {
 
   const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
     if (!isClient || !window.speechSynthesis) return;
-  
+
     window.speechSynthesis.cancel(); // Cancel any previous speech
-  
-    // Display the full text with source code in the UI
-    setAiResponse(text);
-  
-    // Remove the source code prefix for speech
-    const textToSpeak = text.replace(/^\(\w+(\+\w+)?\)\s*/, '');
+
+    const sourceMatch = text.match(/^\(([\w+]+)\)\s*/);
+    const source = sourceMatch ? sourceMatch[1] : '';
+    const textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
+
+    setAiResponse(textToSpeak);
+    setAiResponseSource(source);
+
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
-  
+
     setIsSpeaking(true);
     if (angryMode) setIsAngry(true);
     if (blushingMode) setIsBlushing(true);
-  
+
     utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsAngry(false);
-      setIsBlushing(false);
+        setIsSpeaking(false);
+        setIsAngry(false);
+        setIsBlushing(false);
     };
-  
+
     utterance.onerror = (event) => {
-      if (event.error === 'interrupted') {
-        console.log("Speech interrupted.");
-      } else {
-        console.error("SpeechSynthesis Error:", event.error);
-      }
-      setIsSpeaking(false);
-      setIsAngry(false);
-      setIsBlushing(false);
+        if (event.error === 'interrupted') {
+            console.log("Speech interrupted.");
+        } else {
+            console.error("SpeechSynthesis Error:", event.error);
+        }
+        setIsSpeaking(false);
+        setIsAngry(false);
+        setIsBlushing(false);
     };
-  
+
     window.speechSynthesis.speak(utterance);
   }, [isClient]);
 
@@ -182,6 +185,7 @@ const AIConsciousnessPage = () => {
     }
     setIsLoading(true);
     setAiResponse('');
+    setAiResponseSource('');
     
     try {
       const result = await performSearch({ query });
@@ -212,6 +216,7 @@ const AIConsciousnessPage = () => {
     if (recognitionRef.current) {
         setIsListening(true);
         setAiResponse('');
+        setAiResponseSource('');
         recognitionRef.current.start();
     } else {
         speak("I'm sorry, my voice recognition isn't available on this browser.");
@@ -359,22 +364,27 @@ const AIConsciousnessPage = () => {
               />
           </motion.div>
 
-          <div className="text-center mt-8 min-h-[4rem] flex items-center justify-center">
+          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center">
               <AnimatePresence mode="wait">
                   <motion.div
-                      key={isLoading ? 'loader' : aiResponse}
+                      key={isLoading ? 'loader' : (aiResponse + aiResponseSource)}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
-                      className="w-[90vw] md:w-auto"
+                      className="w-[90vw] md:w-auto flex flex-col items-center"
                   >
                       {isLoading ? (
                           <p className="text-lg text-cyan-400">Thinking{dots}</p>
                       ) : isListening ? (
                           <p className="text-lg text-cyan-400">Listening{dots}</p>
                       ) : aiResponse ? (
-                          <p className="text-lg text-center md:max-w-md">{aiResponse}</p>
+                          <>
+                            {aiResponseSource && (
+                                <p className="text-sm text-cyan-400/70 mb-2 font-mono">[{aiResponseSource}]</p>
+                            )}
+                            <p className="text-lg text-center md:max-w-md">{aiResponse}</p>
+                          </>
                       ) : (
                           <p className="text-gray-400">Click the orb to start a voice search.</p>
                       )}
