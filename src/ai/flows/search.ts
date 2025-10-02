@@ -40,11 +40,13 @@ export type PerformSearchOutput = z.infer<typeof PerformSearchOutputSchema>;
 export async function performSearch(
   input: PerformSearchInput
 ): Promise<PerformSearchOutput> {
+  // Level 1: Check for simple greetings first.
   const greetingResponse = getGreetingResponse(input.query);
   if (greetingResponse) {
     return { response: greetingResponse };
   }
 
+  // Level 2: Strip common prefixes to get a cleaner query.
   const strippedQuery = stripQueryPrefix(input.query);
   const finalQuery = strippedQuery || input.query;
 
@@ -70,7 +72,7 @@ const performSearchFlow = ai.defineFlow(
     outputSchema: PerformSearchOutputSchema,
   },
   async input => {
-    // Level 2: First, try a quick direct web search.
+    // Level 3: First, try a quick direct web search.
     try {
         const ddgResult = await ddgSearchTool(input);
         // A simple check to see if the result is a direct answer or a "not found" message.
@@ -82,7 +84,7 @@ const performSearchFlow = ai.defineFlow(
         console.warn("Initial DDG search failed, proceeding to main AI flow.", e);
     }
     
-    // Level 3: If the quick search fails or doesn't provide a good answer, use the full AI.
+    // Level 4: If the quick search fails or doesn't provide a good answer, use the full AI.
     try {
       const {output} = await prompt(input);
       if (output) {
@@ -91,7 +93,7 @@ const performSearchFlow = ai.defineFlow(
       throw new Error("Primary prompt failed to produce an output.");
     } catch(e) {
         console.error("Primary search flow failed, attempting final fallback.", e);
-        // Level 4: Fallback to a direct web search if the main prompt fails
+        // Level 5: Fallback to a direct web search if the main prompt fails
         const fallbackResult = await ddgSearchTool(input);
         return { response: fallbackResult };
     }
