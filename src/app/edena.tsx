@@ -54,6 +54,16 @@ const EdengramLogo = ({ className }: { className?: string }) => {
     )
 };
 
+type Particle = {
+  id: number;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  duration: number;
+  delay: number;
+};
+
 
 const AIConsciousnessPage = () => {
   const [isListening, setIsListening] = useState(false);
@@ -65,9 +75,30 @@ const AIConsciousnessPage = () => {
   const [isAngry, setIsAngry] = useState(false);
   const [isBlushing, setIsBlushing] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const [isClient, setIsClient] = useState(false);
 
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      const newParticles = Array.from({ length: 20 }).map((_, i) => ({
+        id: i,
+        width: Math.random() * 2 + 1,
+        height: Math.random() * 2 + 1,
+        x: (Math.random() - 0.5) * 220,
+        y: (Math.random() - 0.5) * 220,
+        duration: Math.random() * 2 + 2,
+        delay: Math.random() * 4,
+      }));
+      setParticles(newParticles);
+    }
+  }, [isClient]);
 
   const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
     // Mock functionality since speech synthesis is browser-dependent
@@ -206,26 +237,26 @@ const AIConsciousnessPage = () => {
             onClick={(e) => { e.stopPropagation(); handleListen(); }}
           >
               <AnimatePresence>
-                  {[...Array(20)].map((_, i) => (
+                {isClient && particles.map((p) => (
                       <motion.div
-                          key={`particle-${i}`}
+                          key={`particle-${p.id}`}
                           className="absolute bg-cyan-400/50 rounded-full"
                           style={{
-                              width: `${Math.random() * 2 + 1}px`,
-                              height: `${Math.random() * 2 + 1}px`,
+                              width: `${p.width}px`,
+                              height: `${p.height}px`,
                               top: '50%',
                               left: '50%',
                           }}
                           initial={{
-                              x: (Math.random() - 0.5) * 220,
-                              y: (Math.random() - 0.5) * 220,
+                              x: p.x,
+                              y: p.y,
                               scale: 0,
                           }}
                           animate={{ scale: [0, 1, 0] }}
                           transition={{
-                              duration: Math.random() * 2 + 2,
+                              duration: p.duration,
                               repeat: Infinity,
-                              delay: Math.random() * 4,
+                              delay: p.delay,
                               ease: 'easeInOut'
                           }}
                       />
