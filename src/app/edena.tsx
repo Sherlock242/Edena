@@ -260,7 +260,7 @@ const AIConsciousnessPage = () => {
     <>
       <div className="flex flex-col h-screen bg-black text-white p-4 overflow-hidden" onClick={handleContainerClick}>
         <header className="absolute top-0 left-0 right-0 p-4 z-10">
-          <div className="flex items-center justify-start w-full">
+          <div className="flex items-center justify-between w-full">
               <div className="relative flex items-center h-9 w-[80%] max-w-xl mr-4">
                 <AnimatePresence mode="wait">
                   {showSearch ? (
@@ -303,6 +303,18 @@ const AIConsciousnessPage = () => {
                   )}
                 </AnimatePresence>
               </div>
+              <Button>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="menu-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                      <stop offset="100%" style={{stopColor: 'rgb(0, 255, 255)'}} />
+                    </linearGradient>
+                  </defs>
+                  <path d="M4 8H20" stroke="url(#menu-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M4 16H20" stroke="url(#menu-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </Button>
           </div>
         </header>
 
@@ -398,5 +410,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
