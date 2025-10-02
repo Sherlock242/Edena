@@ -180,6 +180,9 @@ const AIConsciousnessPage = () => {
     try {
       if (appMode === 'search') {
         const result = await performSearch({ query });
+        if(result.imageUrl) {
+            setGeneratedImageUrl(result.imageUrl);
+        }
         speak(result.response);
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
@@ -323,7 +326,7 @@ const AIConsciousnessPage = () => {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:text-cyan-300 hover:bg-transparent">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent">
                         <Menu style={{ color: isImageMode ? 'orangered' : 'hsl(var(--primary))' }} />
                     </Button>
                 </DropdownMenuTrigger>
@@ -415,19 +418,24 @@ const AIConsciousnessPage = () => {
                           </p>
                       ) : isListening ? (
                           <p className="text-lg" style={{ color: isImageMode ? 'orangered' : 'hsl(var(--primary))' }}>Listening{dots}</p>
-                      ) : generatedImageUrl ? (
-                        <div className="mt-4 rounded-lg overflow-hidden border-2" style={{ borderColor: 'orangered' }}>
-                          <Image src={generatedImageUrl} alt="Generated image" width={300} height={300} className="object-contain" />
-                        </div>
-                      ) : aiResponse ? (
-                          <>
-                            {aiResponseSource && (
-                                <p className="text-sm text-cyan-400/70 mb-2 font-mono">[{aiResponseSource}]</p>
-                            )}
-                            <p className="text-lg text-center md:max-w-md">{aiResponse}</p>
-                          </>
                       ) : (
-                          <p className="text-gray-400">Click the orb to start a voice command.</p>
+                        <>
+                          {generatedImageUrl && (
+                            <div className="mb-4 rounded-lg overflow-hidden border-2" style={{ borderColor: 'orangered' }}>
+                              <Image src={generatedImageUrl} alt="Generated image" width={300} height={300} className="object-contain" />
+                            </div>
+                          )}
+                          {aiResponse ? (
+                              <>
+                                {aiResponseSource && (
+                                    <p className="text-sm text-cyan-400/70 mb-2 font-mono">[{aiResponseSource}]</p>
+                                )}
+                                <p className="text-lg text-center md:max-w-md">{aiResponse}</p>
+                              </>
+                          ) : !generatedImageUrl ? (
+                              <p className="text-gray-400">Click the orb to start a voice command.</p>
+                          ) : null}
+                        </>
                       )}
                   </motion.div>
               </AnimatePresence>
@@ -439,5 +447,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
