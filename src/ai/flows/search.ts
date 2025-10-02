@@ -72,12 +72,26 @@ const performSearchFlow = ai.defineFlow(
     outputSchema: PerformSearchOutputSchema,
   },
   async input => {
+    // Level 2 (NEW): Targeted single-API check for very direct queries
+    try {
+        if (input.query.toLowerCase().startsWith('weather in ')) {
+            const location = input.query.substring('weather in '.length);
+            const weatherResult = await weatherTool({ location });
+            return { response: `(PA) ${weatherResult}` };
+        }
+        if (input.query.toLowerCase().startsWith('define ')) {
+            const word = input.query.substring('define '.length);
+            const dictResult = await dictionaryTool({ word });
+            return { response: `(PA) ${dictResult}` };
+        }
+    } catch (e) {
+        console.warn("Targeted API call failed, proceeding to next level.", e);
+    }
+    
     // Level 3: First, try a quick direct web search. This is a fast, free API call.
     try {
         const ddgResult = await ddgSearchTool(input);
-        // A simple check to see if the result is a direct answer and not a "not found" message.
         if (ddgResult && !ddgResult.toLowerCase().includes('no direct answer') && !ddgResult.toLowerCase().includes('couldn\'t perform a web search')) {
-          // If we get a good enough answer, return it immediately to save costs.
           return { response: `(Dgg) ${ddgResult}` };
         }
     } catch (e) {
