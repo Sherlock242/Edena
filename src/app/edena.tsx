@@ -157,7 +157,12 @@ const AIConsciousnessPage = () => {
     };
 
     utterance.onerror = (event) => {
-      console.error("SpeechSynthesis Error:", event.error);
+      if (event.error === 'interrupted') {
+        // This is expected when we interrupt speech, so we don't log it as an error.
+        console.log("Speech interrupted.");
+      } else {
+        console.error("SpeechSynthesis Error:", event.error);
+      }
       setIsSpeaking(false);
       setIsAngry(false);
       setIsBlushing(false);
