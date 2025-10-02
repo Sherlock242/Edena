@@ -22,7 +22,6 @@ import { articlesTool } from '../tools/articles';
 import { cricketTool } from '../tools/cricket';
 import { mediaSearchTool } from '../tools/media-search';
 import { spaceNewsTool } from '../tools/space-news';
-import { snexengineTool } from '../tools/snexengine';
 import { getGreetingResponse } from '../greetings';
 import { stripQueryPrefix } from '../prefixes';
 
@@ -36,7 +35,7 @@ const PerformSearchOutputSchema = z.object({
   response: z.string().describe('The AI-generated answer to the search query.'),
 });
 
-export type PerformSearchOutput = zinfer<typeof PerformSearchOutputSchema>;
+export type PerformSearchOutput = z.infer<typeof PerformSearchOutputSchema>;
 
 // Helper to check for valid search results
 const isValidSearchResult = (result: string) => {
@@ -83,17 +82,7 @@ export async function performSearch(
     return { response: `(G) ${greetingResponse}` };
   }
 
-  // Level 2: Try SnexEngine search first.
-  try {
-    const snexResult = await snexengineTool({ query: originalQuery });
-    if (isValidSearchResult(snexResult)) {
-        return { response: `(Snex) ${snexResult}` };
-    }
-  } catch (e) {
-      console.warn("SnexEngine search failed, proceeding to next step.", e);
-  }
-
-  // Level 3: Try DuckDuckGo search if SnexEngine fails.
+  // Level 2: Try DuckDuckGo search.
   try {
       const ddgResult = await ddgSearchTool({ query: originalQuery });
       if (isValidSearchResult(ddgResult)) {
@@ -103,13 +92,13 @@ export async function performSearch(
       console.warn("DDG search failed, proceeding to next step.", e);
   }
 
-  // Level 4: Try a targeted API call.
+  // Level 3: Try a targeted API call.
   const directApiResponse = await tryDirectApiCall(originalQuery);
   if (directApiResponse) {
       return { response: directApiResponse };
   }
 
-  // Level 5: If all direct methods fail, use the main AI flow.
+  // Level 4: If all direct methods fail, use the main AI flow.
   const finalQuery = stripQueryPrefix(originalQuery) || originalQuery;
   return performSearchFlow({ query: finalQuery });
 }
@@ -118,7 +107,7 @@ const prompt = ai.definePrompt({
   name: 'performSearchPrompt',
   input: {schema: PerformSearchInputSchema},
   output: {schema: PerformSearchOutputSchema},
-  tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool, snexengineTool],
+  tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool],
   prompt: `You are a helpful AI assistant named Edena. Your goal is to provide concise and accurate answers to the user's query.
 
 You have access to several tools to help you answer questions. Based on the user's query, you must decide to use one of the tools to get the most up-to-date and relevant information. For specific topics like "first battle of panipat", prefer a specialized tool like Wikipedia over a general web search.
@@ -134,7 +123,7 @@ const performSearchFlow = ai.defineFlow(
     outputSchema: PerformSearchOutputSchema,
   },
   async input => {
-    // This flow is now the main AI-powered step (Level 5) and contains the final fallbacks.
+    // This flow is now the main AI-powered step (Level 4) and contains the final fallbacks.
     try {
       const {output} = await prompt(input);
       if (output && isValidSearchResult(output.response)) {
@@ -143,17 +132,13 @@ const performSearchFlow = ai.defineFlow(
       throw new Error("Primary AI prompt failed to produce a valid output.");
     } catch(e) {
         console.error("Primary search flow failed, attempting fallback search race.", e);
-        // Fallback: Race SnexEngine and DDG again as a safety net.
+        // Fallback: Race DDG as a safety net.
         try {
-            const raceWinner = await Promise.any([
-                snexengineTool(input).then(res => ({source: 'Snex', result: res})),
-                ddgSearchTool(input).then(res => ({source: 'Dgg', result: res}))
-            ]);
-            
-            if (isValidSearchResult(raceWinner.result)) {
-                return { response: `(${raceWinner.source}) ${raceWinner.result}` };
+            const ddgResult = await ddgSearchTool(input);
+            if (isValidSearchResult(ddgResult)) {
+                return { response: `(Dgg) ${ddgResult}` };
             }
-            throw new Error("Fallback search race was inconclusive.");
+            throw new Error("Fallback DDG search was inconclusive.");
         } catch (fallbackError) {
              // Final Fallback: Force the AI to use another tool.
             console.error("Fallback search race also failed, attempting final tool-based search.", fallbackError);
