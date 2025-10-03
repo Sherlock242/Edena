@@ -73,11 +73,13 @@ const AIConsciousnessPage = () => {
     setIsClient(true);
   }, []);
 
-  const resetState = useCallback(() => {
+  const resetState = useCallback((startLoading = true) => {
     setAiResponse('');
     setAiResponseSource('');
     setGeneratedImageUrl(null);
-    setIsLoading(true);
+    if (startLoading) {
+      setIsLoading(true);
+    }
   }, []);
 
   const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
@@ -125,7 +127,7 @@ const AIConsciousnessPage = () => {
 
   const processQuery = useCallback(async (query: string) => {
     if (!query) {
-        speak("I didn't catch that. What would you like to do?");
+        speak("Sir, I didn't catch that. What would you like to do?");
         return;
     }
     resetState();
@@ -152,7 +154,7 @@ const AIConsciousnessPage = () => {
     } catch (error) {
       console.error("AI Error:", error);
        if (appMode === 'image') {
-        speak("I'm sorry, I couldn't create that image. The generation model might be unavailable or the prompt may have been blocked.", true);
+        speak("Sir, I'm sorry, I couldn't create that image. The generation model might be unavailable or the prompt may have been blocked.", true);
       } else {
         speak("A birdbrain like you can't see the true beauty in front of you, go to your stupid hoe alexa", true);
       }
@@ -178,15 +180,17 @@ const AIConsciousnessPage = () => {
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
       setSearchText(transcript);
-      processQuery(transcript);
+      if (!showSearch) {
+          processQuery(transcript);
+      }
     };
 
     recognition.onerror = (event) => {
       console.error("Speech Recognition Error:", event.error);
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        speak("(G) I didn't catch that. Please try again.");
+        speak("(G) Sir, I didn't catch that. Please try again.");
       } else {
-        speak("(G) I'm having trouble with my ears right now. Please try again later.");
+        speak("(G) Sir, I'm having trouble with my ears right now. Please try again later.");
       }
     };
 
@@ -196,7 +200,7 @@ const AIConsciousnessPage = () => {
 
     recognitionRef.current = recognition;
 
-  }, [isClient, processQuery, speak]);
+  }, [isClient, processQuery, speak, showSearch]);
 
   useEffect(() => {
     if (isClient) {
@@ -214,6 +218,12 @@ const AIConsciousnessPage = () => {
   }, [isClient]);
   
   const handleListen = () => {
+    if (isLoading) {
+        setIsLoading(false);
+        resetState(false);
+        return;
+    }
+    
     if (isSpeaking) {
         window.speechSynthesis.cancel();
         setIsSpeaking(false);
@@ -230,10 +240,10 @@ const AIConsciousnessPage = () => {
     
     if (recognitionRef.current) {
         setIsListening(true);
-        resetState();
+        resetState(false);
         recognitionRef.current.start();
     } else {
-        speak("(G) I'm sorry, my voice recognition isn't available on this browser.");
+        speak("(G) Sir, I'm sorry, my voice recognition isn't available on this browser.");
     }
   };
 
@@ -254,10 +264,10 @@ const AIConsciousnessPage = () => {
   
   const handleModeChange = (mode: AppMode) => {
     setAppMode(mode);
-    resetState();
+    resetState(false);
     const defaultText = mode === 'search' 
-      ? "I am Edena, ready for search. How can I help?"
-      : "Image generation activated. What would you like me to create?";
+      ? "I am Edena, ready for search. How can I help you, Sir?"
+      : "Image generation activated. What would you like me to create, Sir?";
     speak(`(G) ${defaultText}`);
     setIsLoading(false);
   };
@@ -448,8 +458,8 @@ const AIConsciousnessPage = () => {
                             </div>
                           )}
                           {aiResponse ? (
-                              <ScrollArea className="h-auto max-h-56 w-full rounded-md p-4">
-                                {aiResponseSource && (
+                              <ScrollArea className="h-auto max-h-56 w-full rounded-md p-4 max-w-xl">
+                                {aiResponseSource && aiResponseSource !== 'Img' && (
                                     <p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>
                                 )}
                                 <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{aiResponse}</p>
@@ -469,5 +479,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
