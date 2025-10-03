@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -68,7 +67,7 @@ const AIConsciousnessPage = () => {
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-
+  
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -149,7 +148,7 @@ const AIConsciousnessPage = () => {
        if (appMode === 'image') {
         speak("I'm sorry, I couldn't create that image. The generation model might be unavailable or the prompt may have been blocked.", true);
       } else {
-        speak("My apologies, but my connection to the knowledge core is unstable. A birdbrain like you probably can't comprehend the complexity, so just try again later.", true);
+        speak("A birdbrain like you can't see the true beauty in front of you, go to your stupid hoe alexa", true);
       }
     } finally {
       setIsLoading(false);
@@ -191,7 +190,7 @@ const AIConsciousnessPage = () => {
 
     recognitionRef.current = recognition;
 
-  }, [isClient, processQuery, speak]);
+  }, [isClient, processQuery, speak, appMode]);
 
   useEffect(() => {
     if (isClient) {
@@ -266,6 +265,7 @@ const AIConsciousnessPage = () => {
 
   const isImageMode = appMode === 'image';
 
+  // Colors for interactive elements (orb, search, etc.)
   const ring1Color = isAngry ? 'rgba(255, 0, 0, 0.5)' : isImageMode ? 'rgba(255, 69, 0, 0.5)' : 'rgba(0, 255, 255, 0.5)';
   const ring2Color = isAngry ? 'rgba(255, 0, 0, 0.6)' : isImageMode ? 'rgba(255, 100, 0, 0.6)' : 'rgba(0, 255, 255, 0.6)';
   const ring3Color = isAngry ? 'rgba(255, 0, 0, 0.7)' : isImageMode ? 'rgba(255, 140, 0, 0.7)' : 'rgba(0, 255, 255, 0.7)';
@@ -280,10 +280,13 @@ const AIConsciousnessPage = () => {
     ? '0 0 30px orangered, 0 0 15px #FF8C00'
     : '0 0 30px #0ff, 0 0 15px hsl(var(--primary))';
   const particleColor = isAngry ? 'bg-red-500/50' : isImageMode ? 'bg-amber-500/50' : 'bg-cyan-400/50';
-  const iconColor = isAngry ? '#FF4500' : isImageMode ? 'orangered' : 'cyan';
+  const interactiveIconColor = isAngry ? '#FF4500' : isImageMode ? 'orangered' : 'cyan';
   const iconGradientId = isAngry ? 'icon-gradient-angry' : isImageMode ? 'icon-gradient-image' : 'icon-gradient-search';
   const iconStop1 = isAngry ? '#FF0000' : isImageMode ? 'orangered' : '#00BFFF';
   const iconStop2 = isAngry ? '#B22222' : isImageMode ? '#FF8C00' : 'hsl(var(--primary))';
+
+  // Decoupled color for the static menu icon
+  const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 
 
   return (
@@ -310,7 +313,7 @@ const AIConsciousnessPage = () => {
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder={appMode === 'search' ? 'Search...' : 'Describe an image...'}
                             className="w-full bg-transparent border-0 border-b-2 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            style={{ borderColor: iconColor }}
+                            style={{ borderColor: interactiveIconColor }}
                             autoFocus
                           />
                           <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8">
@@ -337,7 +340,7 @@ const AIConsciousnessPage = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
-                        <Menu style={{ color: iconColor }} />
+                        <Menu style={{ color: menuIconColor }} />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56">
@@ -423,11 +426,11 @@ const AIConsciousnessPage = () => {
                       className="w-[90vw] md:w-auto flex flex-col items-center"
                   >
                       {isLoading ? (
-                          <p className="text-lg" style={{ color: iconColor }}>
+                          <p className="text-lg" style={{ color: interactiveIconColor }}>
                             {appMode === 'image' ? 'Generating' : 'Thinking'}{dots}
                           </p>
                       ) : isListening ? (
-                          <p className="text-lg" style={{ color: iconColor }}>Listening{dots}</p>
+                          <p className="text-lg" style={{ color: interactiveIconColor }}>Listening{dots}</p>
                       ) : (
                         <>
                           {generatedImageUrl && (
@@ -460,5 +463,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
