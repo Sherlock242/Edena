@@ -146,7 +146,7 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        const imageReadyResponses = ["your image is ready", "आपकी इमेज तैयार है"];
+        const imageReadyResponses = ["Sir, your image is ready", "सर, आपकी इमेज तैयार है"];
         const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
         speak(`(Img) ${imageReadyResponses[randomIndex]}`);
         setAiResponseSource('');
@@ -229,12 +229,14 @@ const AIConsciousnessPage = () => {
         setIsSpeaking(false);
         setIsAngry(false);
         setIsBlushing(false);
+        resetState(false);
         return;
     }
     
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
+      resetState(false);
       return;
     }
     
@@ -431,7 +433,7 @@ const AIConsciousnessPage = () => {
               />
           </motion.div>
 
-          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full max-w-2xl px-4">
+          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full max-w-3xl px-4">
               <AnimatePresence mode="wait">
                   <motion.div
                       key={isLoading ? 'loader' : (aiResponse + aiResponseSource + generatedImageUrl)}
@@ -479,3 +481,5 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
