@@ -424,7 +424,7 @@ const AIConsciousnessPage = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
-                      className="w-full max-w-md flex flex-col items-center"
+                      className="w-full max-w-xl flex flex-col items-center"
                   >
                       {isLoading ? (
                           <p className="text-lg" style={{ color: interactiveIconColor }}>
@@ -443,11 +443,11 @@ const AIConsciousnessPage = () => {
                             </div>
                           )}
                           {aiResponse ? (
-                              <ScrollArea className="h-auto max-h-36 w-full rounded-md p-4">
+                              <ScrollArea className="h-auto max-h-48 w-full rounded-md p-4">
                                 {aiResponseSource && (
                                     <p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>
                                 )}
-                                <p className="text-lg text-left whitespace-pre-wrap">{isAngry && '💢 '}{aiResponse}</p>
+                                <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{aiResponse}</p>
                               </ScrollArea>
                           ) : !generatedImageUrl ? (
                               <p className="text-gray-400">Click the orb to start a voice command.</p>
@@ -464,5 +464,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
