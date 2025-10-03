@@ -81,7 +81,7 @@ const AIConsciousnessPage = () => {
       setIsLoading(true);
     }
   }, []);
-
+  
   const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
     if (!isClient || !window.speechSynthesis) return;
 
@@ -92,7 +92,7 @@ const AIConsciousnessPage = () => {
     let textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
     
     // Add "Sir," prefix unless it's a greeting or an angry response
-    if (source && source !== 'G' && !angryMode) {
+    if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir')) {
       textToSpeak = `Sir, ${textToSpeak}`;
     }
 
@@ -151,7 +151,7 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        const imageReadyResponses = ["Sir, your image is ready", "सर, आपकी इमेज तैयार है"];
+        const imageReadyResponses = ["your image is ready", "सर, आपकी इमेज तैयार है"];
         const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
         speak(`(Img) ${imageReadyResponses[randomIndex]}`);
         setAiResponseSource('');
@@ -475,7 +475,7 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                             </div>
                           )}
                           {aiResponse ? (
-                              <ScrollArea className="h-auto max-h-56 w-full rounded-md p-4">
+                              <ScrollArea className="h-auto max-h-56 w-full max-w-xl rounded-md p-4">
                                 {aiResponseSource && aiResponseSource !== 'Img' && (
                                     <p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>
                                 )}
@@ -496,5 +496,3 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 };
 
 export default AIConsciousnessPage;
-
-    
