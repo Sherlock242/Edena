@@ -10,11 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 
 type AppMode = 'search' | 'image';
@@ -64,6 +63,7 @@ const AIConsciousnessPage = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
@@ -93,7 +93,7 @@ const AIConsciousnessPage = () => {
     const source = sourceMatch ? sourceMatch[1] : '';
     let textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
     
-    if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir') && source !== 'Img') {
+    if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir') && source !== 'Img' && !blushingMode) {
       textToSpeak = `Sir, ${textToSpeak}`;
     }
 
@@ -152,7 +152,7 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        const imageReadyResponses = ["Sir, your image is ready", "आपकी छवि तैयार है"];
+        const imageReadyResponses = ["Your image is ready", "आपकी छवि तैयार है"];
         const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
         speak(`(Img) ${imageReadyResponses[randomIndex]}`);
         setAiResponseSource('');
@@ -267,10 +267,11 @@ const AIConsciousnessPage = () => {
   };
   
   const handleModeChange = (mode: AppMode) => {
-    setAppMode(mode);
-    resetState(false);
-    setIsLoading(false);
-    setAiResponse('');
+    if (appMode !== mode) {
+      setAppMode(mode);
+      resetState(false);
+    }
+    setIsSheetOpen(false);
   };
 
   useEffect(() => {
@@ -368,23 +369,25 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                   )}
                 </AnimatePresence>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
                         <Menu style={{ color: menuIconColor }} />
                     </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
-                    <DropdownMenuItem onClick={() => handleModeChange('search')}>
-                        <Search className="mr-2 h-4 w-4" />
-                        <span>Search Edena</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleModeChange('image')}>
-                        <ImageIcon className="mr-2 h-4 w-4" />
-                        <span>Image Edena</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
+                    <div className="flex flex-col space-y-8">
+                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
+                            <Search className="mr-4 h-8 w-8" />
+                            <span>Search Edena</span>
+                        </Button>
+                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
+                            <ImageIcon className="mr-4 h-8 w-8" />
+                            <span>Image Edena</span>
+                        </Button>
+                    </div>
+                </SheetContent>
+              </Sheet>
           </div>
         </header>
 
@@ -473,7 +476,7 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                             </div>
                           )}
                           {aiResponse ? (
-                              <ScrollArea className="h-auto max-h-56 w-full max-w-2xl rounded-md p-4">
+                              <ScrollArea className="h-auto max-h-48 w-full max-w-xl rounded-md p-4">
                                 {aiResponseSource && aiResponseSource !== 'Img' && (
                                     <p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>
                                 )}
