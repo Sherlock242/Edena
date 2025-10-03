@@ -186,7 +186,8 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        speak(`Here is the image I generated for: ${query}`);
+        setAiResponse('');
+        setAiResponseSource('');
       }
     } catch (error) {
       console.error("AI Error:", error);
@@ -450,4 +451,5 @@ const AIConsciousnessPage = () => {
 
 export default AIConsciousnessPage;
 
+    
     
