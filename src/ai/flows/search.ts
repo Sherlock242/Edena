@@ -22,6 +22,7 @@ import { articlesTool } from '../tools/articles';
 import { cricketTool } from '../tools/cricket';
 import { mediaSearchTool } from '../tools/media-search';
 import { spaceNewsTool } from '../tools/space-news';
+import { jokesTool } from '../tools/jokes';
 import { getGreetingResponse } from '../greetings';
 import { stripQueryPrefix } from '../prefixes';
 
@@ -104,6 +105,11 @@ const specializedTools: ToolDefinition[] = [
         tool: articlesTool,
         keywords: ['article on', 'articles about', 'find article'],
         getInput: (query, keyword) => ({ query: query.substring(keyword.length).trim() }),
+    },
+    {
+        tool: jokesTool,
+        keywords: ['tell me a joke', 'tell a joke', 'say a joke', 'joke'],
+        getInput: () => ({}),
     }
 ];
 
@@ -182,7 +188,7 @@ const prompt = ai.definePrompt({
   name: 'performSearchPrompt',
   input: {schema: PerformSearchInputSchema},
   output: {schema: z.object({ response: z.string() })},
-  tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool],
+  tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool, jokesTool],
   prompt: `You are a helpful AI assistant named Edena. Your goal is to provide concise and accurate answers to the user's query.
 
 You have access to several tools to help you answer questions. Based on the user's query, you must decide to use one of the tools to get the most up-to-date and relevant information. For specific topics like "first battle of panipat", prefer a specialized tool like Wikipedia over a general web search.
