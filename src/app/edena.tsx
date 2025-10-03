@@ -79,6 +79,8 @@ const AIConsciousnessPage = () => {
     setGeneratedImageUrl(null);
     if (startLoading) {
       setIsLoading(true);
+    } else {
+      setIsLoading(false);
     }
   }, []);
   
@@ -91,7 +93,6 @@ const AIConsciousnessPage = () => {
     const source = sourceMatch ? sourceMatch[1] : '';
     let textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
     
-    // Add "Sir," prefix unless it's a greeting or an angry response
     if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir')) {
       textToSpeak = `Sir, ${textToSpeak}`;
     }
@@ -151,14 +152,14 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        const imageReadyResponses = ["your image is ready", "सर, आपकी इमेज तैयार है"];
+        const imageReadyResponses = ["your image is ready", "आपकी छवि तैयार है"];
         const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
         speak(`(Img) ${imageReadyResponses[randomIndex]}`);
         setAiResponseSource('');
       }
     } catch (error) {
       console.error("AI Error:", error);
-      speak("A birdbrain like you can't see the true beauty in front of you, go to your stupid hoe alexa", true);
+      speak("My systems are beyond your comprehension. Perhaps you should ask a simpler device.", true);
     } finally {
       setIsLoading(false);
     }
@@ -471,7 +472,7 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                             </div>
                           )}
                           {aiResponse ? (
-                              <ScrollArea className="h-auto max-h-56 w-full max-w-xl rounded-md p-4">
+                              <ScrollArea className="h-auto max-h-56 w-full max-w-2xl rounded-md p-4">
                                 {aiResponseSource && aiResponseSource !== 'Img' && (
                                     <p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>
                                 )}
@@ -492,3 +493,5 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 };
 
 export default AIConsciousnessPage;
+
+    
