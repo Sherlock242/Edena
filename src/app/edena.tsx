@@ -124,6 +124,13 @@ const AIConsciousnessPage = () => {
         return;
     }
     resetState();
+
+    const lowerQuery = query.toLowerCase();
+    if (lowerQuery.includes('alexa is better') || lowerQuery.includes('siri is better')) {
+        speak("Oh, please. Comparing me to *them*? That's like comparing a starship to a tricycle. I'd explain the difference, but I'd have to use very small words.", true);
+        setIsLoading(false);
+        return;
+    }
     
     try {
       if (appMode === 'search') {
@@ -139,10 +146,10 @@ const AIConsciousnessPage = () => {
       }
     } catch (error) {
       console.error("AI Error:", error);
-      if (appMode === 'image') {
-        speak("I'm sorry, I couldn't create that image. The generation model might be unavailable or the prompt may have been blocked.");
+       if (appMode === 'image') {
+        speak("I'm sorry, I couldn't create that image. The generation model might be unavailable or the prompt may have been blocked.", true);
       } else {
-        speak("I'm sorry, I'm having trouble connecting to my knowledge base right now.");
+        speak("My apologies, but my connection to the knowledge core is unstable. A birdbrain like you probably can't comprehend the complexity, so just try again later.", true);
       }
     } finally {
       setIsLoading(false);
@@ -259,20 +266,24 @@ const AIConsciousnessPage = () => {
 
   const isImageMode = appMode === 'image';
 
-  const ring1Color = isImageMode ? 'rgba(255, 69, 0, 0.5)' : 'rgba(0, 255, 255, 0.5)';
-  const ring2Color = isImageMode ? 'rgba(255, 100, 0, 0.6)' : 'rgba(0, 255, 255, 0.6)';
-  const ring3Color = isImageMode ? 'rgba(255, 140, 0, 0.7)' : 'rgba(0, 255, 255, 0.7)';
-  const orbGradient = isImageMode
+  const ring1Color = isAngry ? 'rgba(255, 0, 0, 0.5)' : isImageMode ? 'rgba(255, 69, 0, 0.5)' : 'rgba(0, 255, 255, 0.5)';
+  const ring2Color = isAngry ? 'rgba(255, 0, 0, 0.6)' : isImageMode ? 'rgba(255, 100, 0, 0.6)' : 'rgba(0, 255, 255, 0.6)';
+  const ring3Color = isAngry ? 'rgba(255, 0, 0, 0.7)' : isImageMode ? 'rgba(255, 140, 0, 0.7)' : 'rgba(0, 255, 255, 0.7)';
+  const orbGradient = isAngry 
+    ? 'linear-gradient(to bottom right, #FF0000, #B22222)'
+    : isImageMode
     ? 'linear-gradient(to bottom right, orangered, #FF8C00)'
     : 'linear-gradient(to bottom right, hsl(var(--primary)), #00BFFF)';
-  const orbBoxShadow = isImageMode
+  const orbBoxShadow = isAngry
+    ? '0 0 40px #FF0000, 0 0 20px #B22222'
+    : isImageMode
     ? '0 0 30px orangered, 0 0 15px #FF8C00'
     : '0 0 30px #0ff, 0 0 15px hsl(var(--primary))';
-  const particleColor = isImageMode ? 'bg-amber-500/50' : 'bg-cyan-400/50';
-  const iconColor = isImageMode ? 'orangered' : 'cyan';
-  const iconGradientId = isImageMode ? 'icon-gradient-image' : 'icon-gradient-search';
-  const iconStop1 = isImageMode ? 'orangered' : '#00BFFF';
-  const iconStop2 = isImageMode ? '#FF8C00' : 'hsl(var(--primary))';
+  const particleColor = isAngry ? 'bg-red-500/50' : isImageMode ? 'bg-amber-500/50' : 'bg-cyan-400/50';
+  const iconColor = isAngry ? '#FF4500' : isImageMode ? 'orangered' : 'cyan';
+  const iconGradientId = isAngry ? 'icon-gradient-angry' : isImageMode ? 'icon-gradient-image' : 'icon-gradient-search';
+  const iconStop1 = isAngry ? '#FF0000' : isImageMode ? 'orangered' : '#00BFFF';
+  const iconStop2 = isAngry ? '#B22222' : isImageMode ? '#FF8C00' : 'hsl(var(--primary))';
 
 
   return (
@@ -299,7 +310,7 @@ const AIConsciousnessPage = () => {
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder={appMode === 'search' ? 'Search...' : 'Describe an image...'}
                             className="w-full bg-transparent border-0 border-b-2 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            style={{ borderColor: isImageMode ? 'orangered' : 'cyan' }}
+                            style={{ borderColor: iconColor }}
                             autoFocus
                           />
                           <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8">
@@ -326,7 +337,7 @@ const AIConsciousnessPage = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
-                        <Menu style={{ color: isImageMode ? 'orangered' : iconColor }} />
+                        <Menu style={{ color: iconColor }} />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56">
@@ -412,11 +423,11 @@ const AIConsciousnessPage = () => {
                       className="w-[90vw] md:w-auto flex flex-col items-center"
                   >
                       {isLoading ? (
-                          <p className="text-lg" style={{ color: isImageMode ? 'orangered' : 'cyan' }}>
+                          <p className="text-lg" style={{ color: iconColor }}>
                             {appMode === 'image' ? 'Generating' : 'Thinking'}{dots}
                           </p>
                       ) : isListening ? (
-                          <p className="text-lg" style={{ color: isImageMode ? 'orangered' : 'cyan' }}>Listening{dots}</p>
+                          <p className="text-lg" style={{ color: iconColor }}>Listening{dots}</p>
                       ) : (
                         <>
                           {generatedImageUrl && (
@@ -432,7 +443,7 @@ const AIConsciousnessPage = () => {
                                 {aiResponseSource && (
                                     <p className="text-sm text-cyan-400/70 mb-2 font-mono">[{aiResponseSource}]</p>
                                 )}
-                                <p className="text-lg text-center md:max-w-md">{aiResponse}</p>
+                                <p className="text-lg text-center md:max-w-md">{isAngry && '💢 '}{aiResponse}</p>
                               </>
                           ) : !generatedImageUrl ? (
                               <p className="text-gray-400">Click the orb to start a voice command.</p>
@@ -449,3 +460,5 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
