@@ -131,8 +131,8 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        setAiResponse('');
-        setAiResponseSource('');
+        speak(`Here's the image of "${query}"`);
+        setAiResponseSource('Edena.AI');
       }
     } catch (error) {
       console.error("AI Error:", error);
@@ -162,12 +162,9 @@ const AIConsciousnessPage = () => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
-      if (appMode === 'image') {
         setSearchText(transcript);
+        setShowSearch(false);
         processQuery(transcript);
-      } else {
-        processQuery(transcript);
-      }
     };
 
     recognition.onerror = (event) => {
