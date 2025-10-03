@@ -158,11 +158,7 @@ const AIConsciousnessPage = () => {
       }
     } catch (error) {
       console.error("AI Error:", error);
-       if (appMode === 'image') {
-        speak("Sir, I'm sorry, I couldn't create that image. The generation model might be unavailable or the prompt may have been blocked.", true);
-      } else {
-        speak("A birdbrain like you can't see the true beauty in front of you, go to your stupid hoe alexa", true);
-      }
+      speak("A birdbrain like you can't see the true beauty in front of you, go to your stupid hoe alexa", true);
     } finally {
       setIsLoading(false);
     }
@@ -500,3 +496,5 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 };
 
 export default AIConsciousnessPage;
+
+    
