@@ -297,7 +297,7 @@ const AIConsciousnessPage = () => {
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder={appMode === 'search' ? 'Search...' : 'Describe an image...'}
                             className="w-full bg-transparent border-0 border-b-2 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            style={{ borderColor: isImageMode ? 'orangered' : '#00ffff' }}
+                            style={{ borderColor: isImageMode ? 'orangered' : 'hsl(var(--primary))' }}
                             autoFocus
                           />
                           <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8">
