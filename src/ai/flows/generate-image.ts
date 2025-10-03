@@ -30,6 +30,46 @@ export async function generateImage(
   return generateImageFlow(input);
 }
 
+// Function to try fetching from a given URL and return a data URI
+async function tryImageAPI(url: string, isBackup: boolean = false): Promise<string | null> {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          console.error(`API call failed with status: ${response.status} for URL: ${url}`);
+          return null;
+        }
+        
+        let imageBuffer, mimeType;
+        if (isBackup) {
+          // The backup API returns a JSON with the image data
+          const data: any = await response.json();
+          const imageUrl = data?.data?.[0]?.url;
+          if (!imageUrl) {
+            console.error("Backup API did not return a valid image URL.");
+            return null;
+          }
+          const imageResponse = await fetch(imageUrl);
+          if (!imageResponse.ok) {
+            console.error(`Backup image download failed with status: ${imageResponse.status}`);
+            return null;
+          }
+          imageBuffer = await imageResponse.buffer();
+          mimeType = imageResponse.headers.get('content-type') || 'image/png';
+        } else {
+          // The primary API returns the image directly
+          imageBuffer = await response.buffer();
+          mimeType = response.headers.get('content-type') || 'image/jpeg';
+        }
+
+        const base64Image = imageBuffer.toString('base64');
+        return `data:${mimeType};base64,${base64Image}`;
+    } catch (error) {
+        console.error(`Error during API call to ${url}:`, error);
+        return null;
+    }
+}
+
+
 const generateImageFlow = ai.defineFlow(
   {
     name: 'generateImageFlow',
@@ -37,25 +77,22 @@ const generateImageFlow = ai.defineFlow(
     outputSchema: GenerateImageOutputSchema,
   },
   async (input) => {
-    try {
-      // Using a public, non-Google, free image generation API.
-      const response = await fetch('https://image.pollinations.ai/prompt/' + encodeURIComponent(input.prompt));
+    // API 1: Primary (Pollinations.ai)
+    const primaryApiUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(input.prompt);
+    let imageUrl = await tryImageAPI(primaryApiUrl);
 
-      if (!response.ok) {
-        throw new Error(`Image generation failed with status: ${response.status}`);
-      }
-
-      const imageBuffer = await response.buffer();
-      const base64Image = imageBuffer.toString('base64');
-      const mimeType = response.headers.get('content-type') || 'image/jpeg';
-      const imageUrl = `data:${mimeType};base64,${base64Image}`;
-
-      return {
-        imageUrl: imageUrl,
-      };
-    } catch (error) {
-       console.error("Image generation error:", error);
-       throw new Error('Failed to generate image from the public API.');
+    // API 2: Backup (Canva)
+    if (!imageUrl) {
+        console.warn("Primary image generation failed, trying backup API...");
+        const backupApiUrl = `https://image.canva.com/v1/sticker-search?query=${encodeURIComponent(input.prompt)}&width=512&height=512&format=png`;
+        imageUrl = await tryImageAPI(backupApiUrl, true);
     }
+    
+    if (imageUrl) {
+      return { imageUrl };
+    }
+
+    // If both fail, throw an error
+    throw new Error('Failed to generate image from all available public APIs.');
   }
 );
