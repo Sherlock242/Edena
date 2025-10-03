@@ -413,11 +413,11 @@ const AIConsciousnessPage = () => {
                       className="w-[90vw] md:w-auto flex flex-col items-center"
                   >
                       {isLoading ? (
-                          <p className="text-lg" style={{ color: isImageMode ? 'orangered' : 'hsl(var(--primary))' }}>
+                          <p className="text-lg" style={{ color: 'cyan' }}>
                             {appMode === 'image' ? 'Generating' : 'Thinking'}{dots}
                           </p>
                       ) : isListening ? (
-                          <p className="text-lg" style={{ color: isImageMode ? 'orangered' : 'hsl(var(--primary))' }}>Listening{dots}</p>
+                          <p className="text-lg" style={{ color: 'cyan' }}>Listening{dots}</p>
                       ) : (
                         <>
                           {generatedImageUrl && (
@@ -450,7 +450,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
-
-    
