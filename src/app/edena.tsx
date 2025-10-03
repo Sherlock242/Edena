@@ -87,8 +87,13 @@ const AIConsciousnessPage = () => {
 
     const sourceMatch = text.match(/^\(([\w+]+)\)\s*/);
     const source = sourceMatch ? sourceMatch[1] : '';
-    const textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
+    let textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
     
+    // Add "Sir," prefix unless it's a greeting or an angry response
+    if (source && source !== 'G' && !angryMode) {
+      textToSpeak = `Sir, ${textToSpeak}`;
+    }
+
     setAiResponse(textToSpeak);
     setAiResponseSource(source);
 
@@ -139,9 +144,9 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        const imageReadyResponses = ["Sir, your image is ready", "सर, आपकी इमेज तैयार है"];
+        const imageReadyResponses = ["your image is ready", "आपकी इमेज तैयार है"];
         const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
-        speak(imageReadyResponses[randomIndex]);
+        speak(`(Img) ${imageReadyResponses[randomIndex]}`);
         setAiResponseSource('');
       }
     } catch (error) {
@@ -179,9 +184,9 @@ const AIConsciousnessPage = () => {
     recognition.onerror = (event) => {
       console.error("Speech Recognition Error:", event.error);
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        speak("I didn't catch that. Please try again.");
+        speak("(G) I didn't catch that. Please try again.");
       } else {
-        speak("I'm having trouble with my ears right now. Please try again later.");
+        speak("(G) I'm having trouble with my ears right now. Please try again later.");
       }
     };
 
@@ -228,7 +233,7 @@ const AIConsciousnessPage = () => {
         resetState();
         recognitionRef.current.start();
     } else {
-        speak("I'm sorry, my voice recognition isn't available on this browser.");
+        speak("(G) I'm sorry, my voice recognition isn't available on this browser.");
     }
   };
 
@@ -253,7 +258,7 @@ const AIConsciousnessPage = () => {
     const defaultText = mode === 'search' 
       ? "I am Edena, ready for search. How can I help?"
       : "Image generation activated. What would you like me to create?";
-    speak(defaultText);
+    speak(`(G) ${defaultText}`);
     setIsLoading(false);
   };
 
@@ -416,7 +421,7 @@ const AIConsciousnessPage = () => {
               />
           </motion.div>
 
-          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full">
+          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full max-w-2xl px-4">
               <AnimatePresence mode="wait">
                   <motion.div
                       key={isLoading ? 'loader' : (aiResponse + aiResponseSource + generatedImageUrl)}
@@ -424,7 +429,7 @@ const AIConsciousnessPage = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
-                      className="w-full max-w-xl flex flex-col items-center"
+                      className="w-full flex flex-col items-center"
                   >
                       {isLoading ? (
                           <p className="text-lg" style={{ color: interactiveIconColor }}>
@@ -443,7 +448,7 @@ const AIConsciousnessPage = () => {
                             </div>
                           )}
                           {aiResponse ? (
-                              <ScrollArea className="h-auto max-h-48 w-full rounded-md p-4">
+                              <ScrollArea className="h-auto max-h-56 w-full rounded-md p-4">
                                 {aiResponseSource && (
                                     <p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>
                                 )}
@@ -464,3 +469,5 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
