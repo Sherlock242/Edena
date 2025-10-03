@@ -412,18 +412,18 @@ const AIConsciousnessPage = () => {
                       className="w-[90vw] md:w-auto flex flex-col items-center"
                   >
                       {isLoading ? (
-                          <p className="text-lg" style={{ color: 'hsl(var(--primary))' }}>
+                          <p className="text-lg" style={{ color: isImageMode ? 'orangered' : 'cyan' }}>
                             {appMode === 'image' ? 'Generating' : 'Thinking'}{dots}
                           </p>
                       ) : isListening ? (
-                          <p className="text-lg" style={{ color: 'hsl(var(--primary))' }}>Listening{dots}</p>
+                          <p className="text-lg" style={{ color: isImageMode ? 'orangered' : 'cyan' }}>Listening{dots}</p>
                       ) : (
                         <>
                           {generatedImageUrl && (
                             <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[300px] h-[300px]" style={{ borderColor: 'orangered' }}>
                               <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-contain" />
-                              <div className="absolute bottom-0 left-0 right-0 bg-black/80 py-1 px-2 text-center">
-                                  <p className="text-white text-xs font-mono">edenaimagegeration.ai</p>
+                              <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center">
+                                  <p className="text-white text-xs font-mono">Edena.AI</p>
                               </div>
                             </div>
                           )}
