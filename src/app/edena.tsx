@@ -199,6 +199,11 @@ const AIConsciousnessPage = () => {
   }, [appMode, speak, resetState]);
 
   const handleListen = () => {
+    if (appMode === 'image') {
+        speak("Voice commands are disabled for image generation. Please use the text input.", false, true);
+        return;
+    }
+
     if (isSpeaking) {
         window.speechSynthesis.cancel();
         setIsSpeaking(false);
@@ -267,7 +272,7 @@ const AIConsciousnessPage = () => {
     ? '0 0 30px orangered, 0 0 15px #FF8C00'
     : '0 0 30px #0ff, 0 0 15px hsl(var(--primary))';
   const particleColor = isImageMode ? 'bg-amber-500/50' : 'bg-cyan-400/50';
-  const iconColor = isImageMode ? 'orangered' : 'cyan-400';
+  const iconColor = isImageMode ? 'orangered' : 'cyan';
   const iconGradientId = isImageMode ? 'icon-gradient-image' : 'icon-gradient-search';
   const iconStop1 = isImageMode ? 'orangered' : '#00BFFF';
   const iconStop2 = isImageMode ? '#FF8C00' : 'hsl(var(--primary))';
@@ -324,7 +329,7 @@ const AIConsciousnessPage = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
-                        <Menu style={{ color: isImageMode ? 'orangered' : 'cyan' }} />
+                        <Menu style={{ color: isImageMode ? 'orangered' : iconColor }} />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56">
@@ -420,7 +425,7 @@ const AIConsciousnessPage = () => {
                           {generatedImageUrl && (
                             <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[200px] h-[200px]" style={{ borderColor: 'orangered' }}>
                               <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-cover" />
-                              <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center">
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-1 px-2 text-center">
                                   <p className="text-white text-xs font-mono">Edena.AI</p>
                               </div>
                             </div>
@@ -447,5 +452,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
