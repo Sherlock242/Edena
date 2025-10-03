@@ -131,7 +131,6 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        // We removed the speak call here to make image generation silent.
         setAiResponse('');
         setAiResponseSource('');
       }
@@ -164,9 +163,7 @@ const AIConsciousnessPage = () => {
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
       if (appMode === 'image') {
-        setShowSearch(true);
         setSearchText(transcript);
-        // Automatically submit for image generation
         processQuery(transcript);
       } else {
         processQuery(transcript);
