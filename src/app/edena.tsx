@@ -93,7 +93,7 @@ const AIConsciousnessPage = () => {
     const source = sourceMatch ? sourceMatch[1] : '';
     let textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
     
-    if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir')) {
+    if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir') && source !== 'Img') {
       textToSpeak = `Sir, ${textToSpeak}`;
     }
 
@@ -152,7 +152,7 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        const imageReadyResponses = ["your image is ready", "आपकी छवि तैयार है"];
+        const imageReadyResponses = ["Sir, your image is ready", "आपकी छवि तैयार है"];
         const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
         speak(`(Img) ${imageReadyResponses[randomIndex]}`);
         setAiResponseSource('');
@@ -270,6 +270,7 @@ const AIConsciousnessPage = () => {
     setAppMode(mode);
     resetState(false);
     setIsLoading(false);
+    setAiResponse('');
   };
 
   useEffect(() => {
@@ -479,7 +480,7 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                                 <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{isBlushing && '😊 '}{aiResponse}</p>
                               </ScrollArea>
                           ) : !generatedImageUrl ? (
-                            <p className="text-lg text-muted-foreground">Click the orb to start a voice command.</p>
+                            <p className="text-lg text-muted-foreground whitespace-nowrap">Click the orb to start a voice command.</p>
                           ) : null}
                         </>
                       )}
@@ -493,5 +494,3 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 };
 
 export default AIConsciousnessPage;
-
-    
