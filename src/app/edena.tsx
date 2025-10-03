@@ -163,7 +163,6 @@ const AIConsciousnessPage = () => {
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
         setSearchText(transcript);
-        setShowSearch(false);
         processQuery(transcript);
     };
 
@@ -182,7 +181,7 @@ const AIConsciousnessPage = () => {
 
     recognitionRef.current = recognition;
 
-  }, [isClient, appMode, processQuery, speak]);
+  }, [isClient, processQuery, speak]);
 
   useEffect(() => {
     if (isClient) {
@@ -423,7 +422,7 @@ const AIConsciousnessPage = () => {
                           {generatedImageUrl && (
                             <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[200px] h-[200px]" style={{ borderColor: 'orangered' }}>
                               <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-cover" />
-                              <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-1 px-2 text-center">
+                              <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center">
                                   <p className="text-white text-xs font-mono">Edena.AI</p>
                               </div>
                             </div>
@@ -450,5 +449,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
