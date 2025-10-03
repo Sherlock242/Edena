@@ -379,11 +379,11 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                 <SheetContent side="right" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                     <div className="flex flex-col space-y-8">
-                        <Button variant="ghost" className="text-2xl h-20 text-cyan-400 hover:bg-white/10" onClick={() => handleModeChange('search')}>
+                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
                             <Search className="mr-4 h-8 w-8" />
                             <span>Search Edena</span>
                         </Button>
-                        <Button variant="ghost" className="text-2xl h-20 text-orange-500 hover:bg-white/10" onClick={() => handleModeChange('image')}>
+                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
                             <ImageIcon className="mr-4 h-8 w-8" />
                             <span>Image Edena</span>
                         </Button>
