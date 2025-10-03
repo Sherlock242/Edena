@@ -133,7 +133,7 @@ const AIConsciousnessPage = () => {
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
         speak(`Here's the image of "${query}"`);
-        setAiResponseSource('Edena.AI');
+        setAiResponseSource(''); // Remove source for image gen
       }
     } catch (error) {
       console.error("AI Error:", error);
@@ -163,8 +163,12 @@ const AIConsciousnessPage = () => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
-        setSearchText(transcript);
+      setSearchText(transcript);
+      if (appMode === 'image') {
         processQuery(transcript);
+      } else {
+        processQuery(transcript);
+      }
     };
 
     recognition.onerror = (event) => {
@@ -182,7 +186,7 @@ const AIConsciousnessPage = () => {
 
     recognitionRef.current = recognition;
 
-  }, [isClient, processQuery, speak]);
+  }, [isClient, processQuery, speak, appMode]);
 
   useEffect(() => {
     if (isClient) {
@@ -216,9 +220,7 @@ const AIConsciousnessPage = () => {
     
     if (recognitionRef.current) {
         setIsListening(true);
-        if(appMode === 'search') {
-          resetState();
-        }
+        resetState();
         recognitionRef.current.start();
     } else {
         speak("I'm sorry, my voice recognition isn't available on this browser.");
@@ -450,3 +452,8 @@ const AIConsciousnessPage = () => {
 
 export default AIConsciousnessPage;
 
+
+
+    
+
+    
