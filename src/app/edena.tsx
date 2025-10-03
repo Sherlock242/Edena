@@ -55,7 +55,7 @@ const AIConsciousnessPage = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [aiResponse, setAiResponse] = useState("Hello there! How can I help you search for information today?");
+  const [aiResponse, setAiResponse] = useState('');
   const [aiResponseSource, setAiResponseSource] = useState('');
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [dots, setDots] = useState('');
@@ -268,10 +268,6 @@ const AIConsciousnessPage = () => {
   const handleModeChange = (mode: AppMode) => {
     setAppMode(mode);
     resetState(false);
-    const defaultText = mode === 'search' 
-      ? "I am Edena, ready for search. How can I help you, Sir?"
-      : "Image generation activated. What would you like me to create, Sir?";
-    speak(`(G) ${defaultText}`);
     setIsLoading(false);
   };
 
@@ -481,8 +477,6 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                                 )}
                                 <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{isBlushing && '😊 '}{aiResponse}</p>
                               </ScrollArea>
-                          ) : !generatedImageUrl ? (
-                              <p className="text-gray-400">Click the orb to start a voice command.</p>
                           ) : null}
                         </>
                       )}
@@ -496,3 +490,5 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 };
 
 export default AIConsciousnessPage;
+
+    
