@@ -71,69 +71,12 @@ const AIConsciousnessPage = () => {
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
-  useEffect(() => {
-    if (!isClient) return;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.warn("Speech recognition not supported in this browser.");
-      return;
-    }
-    
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim();
-      if (appMode === 'image') {
-        setShowSearch(true);
-        setSearchText(transcript);
-        processQuery(transcript);
-      } else {
-        processQuery(transcript);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      console.error("Speech Recognition Error:", event.error);
-      if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        speak("I didn't catch that. Please try again.");
-      } else {
-        speak("I'm having trouble with my ears right now. Please try again later.");
-      }
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognitionRef.current = recognition;
-
-  }, [isClient, appMode]);
-
-  useEffect(() => {
-    if (isClient) {
-      const newParticles = Array.from({ length: 20 }).map((_, i) => ({
-        id: i,
-        width: Math.random() * 2 + 1,
-        height: Math.random() * 2 + 1,
-        x: (Math.random() - 0.5) * 220,
-        y: (Math.random() - 0.5) * 220,
-        duration: Math.random() * 2 + 2,
-        delay: Math.random() * 4,
-      }));
-      setParticles(newParticles);
-    }
-  }, [isClient]);
-  
   const resetState = useCallback(() => {
-        setAiResponse('');
-        setAiResponseSource('');
-        setGeneratedImageUrl(null);
-        setIsLoading(true);
+    setAiResponse('');
+    setAiResponseSource('');
+    setGeneratedImageUrl(null);
+    setIsLoading(true);
   }, []);
 
   const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
@@ -174,7 +117,6 @@ const AIConsciousnessPage = () => {
     window.speechSynthesis.speak(utterance);
   }, [isClient]);
 
-
   const processQuery = useCallback(async (query: string) => {
     if (!query) {
         speak("I didn't catch that. What would you like to do?");
@@ -189,6 +131,7 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
+        // We removed the speak call here to make image generation silent.
         setAiResponse('');
         setAiResponseSource('');
       }
@@ -203,7 +146,65 @@ const AIConsciousnessPage = () => {
       setIsLoading(false);
     }
   }, [appMode, speak, resetState]);
+  
+  useEffect(() => {
+    if (!isClient) return;
 
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn("Speech recognition not supported in this browser.");
+      return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim();
+      if (appMode === 'image') {
+        setShowSearch(true);
+        setSearchText(transcript);
+        // Automatically submit for image generation
+        processQuery(transcript);
+      } else {
+        processQuery(transcript);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech Recognition Error:", event.error);
+      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+        speak("I didn't catch that. Please try again.");
+      } else {
+        speak("I'm having trouble with my ears right now. Please try again later.");
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+  }, [isClient, appMode, processQuery, speak]);
+
+  useEffect(() => {
+    if (isClient) {
+      const newParticles = Array.from({ length: 20 }).map((_, i) => ({
+        id: i,
+        width: Math.random() * 2 + 1,
+        height: Math.random() * 2 + 1,
+        x: (Math.random() - 0.5) * 220,
+        y: (Math.random() - 0.5) * 220,
+        duration: Math.random() * 2 + 2,
+        delay: Math.random() * 4,
+      }));
+      setParticles(newParticles);
+    }
+  }, [isClient]);
+  
   const handleListen = () => {
     if (isSpeaking) {
         window.speechSynthesis.cancel();
