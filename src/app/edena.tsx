@@ -88,7 +88,13 @@ const AIConsciousnessPage = () => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
-      processQuery(transcript);
+      if (appMode === 'image') {
+        setShowSearch(true);
+        setSearchText(transcript);
+        processQuery(transcript);
+      } else {
+        processQuery(transcript);
+      }
     };
 
     recognition.onerror = (event) => {
@@ -106,7 +112,7 @@ const AIConsciousnessPage = () => {
 
     recognitionRef.current = recognition;
 
-  }, [isClient]);
+  }, [isClient, appMode]);
 
   useEffect(() => {
     if (isClient) {
@@ -199,11 +205,6 @@ const AIConsciousnessPage = () => {
   }, [appMode, speak, resetState]);
 
   const handleListen = () => {
-    if (appMode === 'image') {
-        speak("Voice commands are disabled for image generation. Please use the text input.", false, true);
-        return;
-    }
-
     if (isSpeaking) {
         window.speechSynthesis.cancel();
         setIsSpeaking(false);
@@ -220,7 +221,9 @@ const AIConsciousnessPage = () => {
     
     if (recognitionRef.current) {
         setIsListening(true);
-        resetState();
+        if(appMode === 'search') {
+          resetState();
+        }
         recognitionRef.current.start();
     } else {
         speak("I'm sorry, my voice recognition isn't available on this browser.");
@@ -452,3 +455,5 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
