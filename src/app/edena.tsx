@@ -477,6 +477,8 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                                 )}
                                 <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{isBlushing && '😊 '}{aiResponse}</p>
                               </ScrollArea>
+                          ) : !generatedImageUrl ? (
+                            <p className="text-lg text-muted-foreground">Click the orb to start a voice command.</p>
                           ) : null}
                         </>
                       )}
@@ -490,5 +492,3 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 };
 
 export default AIConsciousnessPage;
-
-    
