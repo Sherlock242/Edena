@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -228,7 +229,6 @@ const AIConsciousnessPage = () => {
     e.preventDefault();
     if (searchText.trim()) {
       processQuery(searchText.trim());
-      setSearchText('');
     }
     setShowSearch(false);
   };
@@ -449,3 +449,4 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
