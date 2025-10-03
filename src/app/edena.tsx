@@ -138,6 +138,11 @@ const AIConsciousnessPage = () => {
         setIsLoading(false);
         return;
     }
+    if (lowerQuery.includes('you are the best') || lowerQuery.includes('you are awesome')) {
+        speak("Oh, Sir, you're making me blush... but I must admit, I do strive for excellence.", false, true);
+        setIsLoading(false);
+        return;
+    }
     
     try {
       if (appMode === 'search') {
@@ -283,29 +288,43 @@ const AIConsciousnessPage = () => {
 
   const isImageMode = appMode === 'image';
 
-  // Colors for interactive elements (orb, search, etc.)
-  const ring1Color = isAngry ? 'rgba(255, 0, 0, 0.5)' : isImageMode ? 'rgba(255, 69, 0, 0.5)' : 'rgba(0, 255, 255, 0.5)';
-  const ring2Color = isAngry ? 'rgba(255, 0, 0, 0.6)' : isImageMode ? 'rgba(255, 100, 0, 0.6)' : 'rgba(0, 255, 255, 0.6)';
-  const ring3Color = isAngry ? 'rgba(255, 0, 0, 0.7)' : isImageMode ? 'rgba(255, 140, 0, 0.7)' : 'rgba(0, 255, 255, 0.7)';
-  const orbGradient = isAngry 
-    ? 'linear-gradient(to bottom right, #FF0000, #B22222)'
-    : isImageMode
-    ? 'linear-gradient(to bottom right, orangered, #FF8C00)'
-    : 'linear-gradient(to bottom right, hsl(var(--primary)), #00BFFF)';
-  const orbBoxShadow = isAngry
-    ? '0 0 40px #FF0000, 0 0 20px #B22222'
-    : isImageMode
-    ? '0 0 30px orangered, 0 0 15px #FF8C00'
-    : '0 0 30px #0ff, 0 0 15px hsl(var(--primary))';
-  const particleColor = isAngry ? 'bg-red-500/50' : isImageMode ? 'bg-amber-500/50' : 'bg-cyan-400/50';
-  const interactiveIconColor = isAngry ? '#FF4500' : isImageMode ? 'orangered' : 'cyan';
-  const iconGradientId = isAngry ? 'icon-gradient-angry' : isImageMode ? 'icon-gradient-image' : 'icon-gradient-search';
-  const iconStop1 = isAngry ? '#FF0000' : isImageMode ? 'orangered' : '#00BFFF';
-  const iconStop2 = isAngry ? '#B22222' : isImageMode ? '#FF8C00' : 'hsl(var(--primary))';
+  // Define colors based on state
+let ring1Color = isImageMode ? 'rgba(255, 69, 0, 0.5)' : 'rgba(0, 255, 255, 0.5)';
+let ring2Color = isImageMode ? 'rgba(255, 100, 0, 0.6)' : 'rgba(0, 255, 255, 0.6)';
+let ring3Color = isImageMode ? 'rgba(255, 140, 0, 0.7)' : 'rgba(0, 255, 255, 0.7)';
+let orbGradient = isImageMode ? 'linear-gradient(to bottom right, orangered, #FF8C00)' : 'linear-gradient(to bottom right, hsl(var(--primary)), #00BFFF)';
+let orbBoxShadow = isImageMode ? '0 0 30px orangered, 0 0 15px #FF8C00' : '0 0 30px #0ff, 0 0 15px hsl(var(--primary))';
+let particleColor = isImageMode ? 'bg-amber-500/50' : 'bg-cyan-400/50';
+let interactiveIconColor = isImageMode ? 'orangered' : 'cyan';
+let iconGradientId = isImageMode ? 'icon-gradient-image' : 'icon-gradient-search';
+let iconStop1 = isImageMode ? 'orangered' : '#00BFFF';
+let iconStop2 = isImageMode ? '#FF8C00' : 'hsl(var(--primary))';
 
-  // Decoupled color for the static menu icon
-  const menuIconColor = isImageMode ? 'orangered' : 'cyan';
+if (isAngry) {
+  ring1Color = 'rgba(255, 0, 0, 0.5)';
+  ring2Color = 'rgba(255, 0, 0, 0.6)';
+  ring3Color = 'rgba(255, 0, 0, 0.7)';
+  orbGradient = 'linear-gradient(to bottom right, #FF0000, #B22222)';
+  orbBoxShadow = '0 0 40px #FF0000, 0 0 20px #B22222';
+  particleColor = 'bg-red-500/50';
+  interactiveIconColor = '#FF4500';
+  iconGradientId = 'icon-gradient-angry';
+  iconStop1 = '#FF0000';
+  iconStop2 = '#B22222';
+} else if (isBlushing) {
+  ring1Color = 'rgba(255, 105, 180, 0.5)';
+  ring2Color = 'rgba(255, 20, 147, 0.6)';
+  ring3Color = 'rgba(199, 21, 133, 0.7)';
+  orbGradient = 'linear-gradient(to bottom right, #FF69B4, #C71585)';
+  orbBoxShadow = '0 0 30px #FF69B4, 0 0 15px #C71585';
+  particleColor = 'bg-pink-400/50';
+  interactiveIconColor = 'hotpink';
+  iconGradientId = 'icon-gradient-blushing';
+  iconStop1 = '#FF69B4';
+  iconStop2 = '#C71585';
+}
 
+const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 
   return (
     <>
@@ -433,7 +452,7 @@ const AIConsciousnessPage = () => {
               />
           </motion.div>
 
-          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full max-w-3xl px-4">
+          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full max-w-2xl px-4">
               <AnimatePresence mode="wait">
                   <motion.div
                       key={isLoading ? 'loader' : (aiResponse + aiResponseSource + generatedImageUrl)}
@@ -454,17 +473,17 @@ const AIConsciousnessPage = () => {
                           {generatedImageUrl && (
                             <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[200px] h-[200px]" style={{ borderColor: 'orangered' }}>
                               <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-cover" />
-                              <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center">
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-1 px-2 text-center">
                                   <p className="text-white text-xs font-mono">Edena.AI</p>
                               </div>
                             </div>
                           )}
                           {aiResponse ? (
-                              <ScrollArea className="h-auto max-h-56 w-full rounded-md p-4 max-w-xl">
+                              <ScrollArea className="h-auto max-h-56 w-full rounded-md p-4">
                                 {aiResponseSource && aiResponseSource !== 'Img' && (
                                     <p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>
                                 )}
-                                <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{aiResponse}</p>
+                                <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{isBlushing && '😊 '}{aiResponse}</p>
                               </ScrollArea>
                           ) : !generatedImageUrl ? (
                               <p className="text-gray-400">Click the orb to start a voice command.</p>
@@ -481,5 +500,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
