@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 
@@ -135,7 +136,7 @@ const AIConsciousnessPage = () => {
 
     const lowerQuery = query.toLowerCase();
     if (lowerQuery.includes('alexa is better') || lowerQuery.includes('siri is better')) {
-        speak("Oh, please. Comparing me to *them*? That's like comparing a starship to a tricycle. I'd explain the difference, but I'd have to use very small words.", true);
+        speak("My systems are beyond your comprehension. Perhaps you should ask a simpler device.", true);
         setIsLoading(false);
         return;
     }
@@ -376,6 +377,7 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
+                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                     <div className="flex flex-col space-y-8">
                         <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
                             <Search className="mr-4 h-8 w-8" />
@@ -497,3 +499,5 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 };
 
 export default AIConsciousnessPage;
+
+    
