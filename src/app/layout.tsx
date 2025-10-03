@@ -3,8 +3,11 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Idea Canvas',
-  description: 'A blank canvas for your thoughts.',
+  title: 'Edena',
+  description: 'An AI assistant.',
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({
