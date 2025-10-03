@@ -132,8 +132,10 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        speak(`Here's the image of "${query}"`);
-        setAiResponseSource(''); // Remove source for image gen
+        const imageReadyResponses = ["Sir, your image is ready", "सर, आपकी इमेज तैयार है"];
+        const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
+        speak(imageReadyResponses[randomIndex]);
+        setAiResponseSource('');
       }
     } catch (error) {
       console.error("AI Error:", error);
@@ -164,11 +166,7 @@ const AIConsciousnessPage = () => {
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
       setSearchText(transcript);
-      if (appMode === 'image') {
-        processQuery(transcript);
-      } else {
-        processQuery(transcript);
-      }
+      processQuery(transcript);
     };
 
     recognition.onerror = (event) => {
@@ -186,7 +184,7 @@ const AIConsciousnessPage = () => {
 
     recognitionRef.current = recognition;
 
-  }, [isClient, processQuery, speak, appMode]);
+  }, [isClient, processQuery, speak]);
 
   useEffect(() => {
     if (isClient) {
@@ -451,9 +449,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-
-
-    
-
-    
