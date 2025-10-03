@@ -325,7 +325,7 @@ const AIConsciousnessPage = () => {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0">
                         <Menu style={{ color: isImageMode ? 'orangered' : 'hsl(var(--primary))' }} />
                     </Button>
                 </DropdownMenuTrigger>
@@ -420,8 +420,8 @@ const AIConsciousnessPage = () => {
                       ) : (
                         <>
                           {generatedImageUrl && (
-                            <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[300px] h-[300px]" style={{ borderColor: 'orangered' }}>
-                              <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-contain" />
+                            <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[200px] h-[200px]" style={{ borderColor: 'orangered' }}>
+                              <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-cover" />
                               <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center">
                                   <p className="text-white text-xs font-mono">Edena.AI</p>
                               </div>
