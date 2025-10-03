@@ -179,9 +179,6 @@ const AIConsciousnessPage = () => {
     try {
       if (appMode === 'search') {
         const result = await performSearch({ query });
-        if(result.imageUrl) {
-            setGeneratedImageUrl(result.imageUrl);
-        }
         speak(result.response);
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
@@ -450,6 +447,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
-    

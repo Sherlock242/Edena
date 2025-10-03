@@ -24,7 +24,6 @@ import { mediaSearchTool } from '../tools/media-search';
 import { spaceNewsTool } from '../tools/space-news';
 import { getGreetingResponse } from '../greetings';
 import { stripQueryPrefix } from '../prefixes';
-import { generateImage } from './generate-image';
 
 const PerformSearchInputSchema = z.object({
   query: z.string().describe('The search query from the user.'),
@@ -34,7 +33,6 @@ export type PerformSearchInput = z.infer<typeof PerformSearchInputSchema>;
 
 const PerformSearchOutputSchema = z.object({
   response: z.string().describe('The AI-generated answer to the search query.'),
-  imageUrl: z.string().optional().describe('An optional URL for a generated image related to the query.'),
 });
 
 export type PerformSearchOutput = z.infer<typeof PerformSearchOutputSchema>;
@@ -113,9 +111,9 @@ const specializedTools: ToolDefinition[] = [
 /**
  * Tries to answer a query by matching it against specialized tool keywords.
  * It checks the raw query and a version with common prefixes stripped.
- * Returns both the API response and the topic for image generation if successful.
+ * Returns the API response if successful.
  */
-async function tryDirectApiCall(originalQuery: string): Promise<{ response: string; imagePrompt: string } | null> {
+async function tryDirectApiCall(originalQuery: string): Promise<string | null> {
     const queriesToCheck = [originalQuery];
     
     // Also check a version with common conversational prefixes stripped off.
@@ -134,9 +132,7 @@ async function tryDirectApiCall(originalQuery: string): Promise<{ response: stri
                         const input = getInput(query, keyword);
                         const result = await tool(input);
                         if (isValidSearchResult(result)) {
-                            // On success, return the result and a prompt for image generation
-                            const imagePrompt = input.query || input.location || input.word || keyword;
-                            return { response: `(PA) ${result}`, imagePrompt };
+                            return `(PA) ${result}`;
                         }
                     } catch (e) {
                         // Log the error but proceed to the next tool/method
@@ -165,13 +161,7 @@ export async function performSearch(
   // Level 2: Try a targeted API call (handles prefixes internally).
   const directApiResult = await tryDirectApiCall(originalQuery);
   if (directApiResult) {
-      try {
-        const imageResult = await generateImage({ prompt: directApiResult.imagePrompt });
-        return { response: directApiResult.response, imageUrl: imageResult.imageUrl };
-      } catch (e) {
-        console.warn("Image generation failed for direct API call, returning text only.", e);
-        return { response: directApiResult.response };
-      }
+      return { response: directApiResult };
   }
 
   // Level 3: Try DuckDuckGo search.
@@ -191,7 +181,7 @@ export async function performSearch(
 const prompt = ai.definePrompt({
   name: 'performSearchPrompt',
   input: {schema: PerformSearchInputSchema},
-  output: {schema: z.object({ response: z.string() })}, // AI flow won't generate images
+  output: {schema: z.object({ response: z.string() })},
   tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool],
   prompt: `You are a helpful AI assistant named Edena. Your goal is to provide concise and accurate answers to the user's query.
 
