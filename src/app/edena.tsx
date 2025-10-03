@@ -299,7 +299,7 @@ const AIConsciousnessPage = () => {
                             onChange={(e) => setSearchText(e.target.value)}
                             placeholder={appMode === 'search' ? 'Search...' : 'Describe an image...'}
                             className="w-full bg-transparent border-0 border-b-2 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            style={{ borderColor: isImageMode ? 'orangered' : 'hsl(var(--primary))' }}
+                            style={{ borderColor: isImageMode ? 'orangered' : '#00ffff' }}
                             autoFocus
                           />
                           <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8">
@@ -412,17 +412,17 @@ const AIConsciousnessPage = () => {
                       className="w-[90vw] md:w-auto flex flex-col items-center"
                   >
                       {isLoading ? (
-                          <p className="text-lg" style={{ color: 'cyan' }}>
+                          <p className="text-lg" style={{ color: 'hsl(var(--primary))' }}>
                             {appMode === 'image' ? 'Generating' : 'Thinking'}{dots}
                           </p>
                       ) : isListening ? (
-                          <p className="text-lg" style={{ color: 'cyan' }}>Listening{dots}</p>
+                          <p className="text-lg" style={{ color: 'hsl(var(--primary))' }}>Listening{dots}</p>
                       ) : (
                         <>
                           {generatedImageUrl && (
-                            <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[200px] h-[200px]" style={{ borderColor: 'orangered' }}>
-                              <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-cover" />
-                              <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center">
+                            <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[300px] h-[300px]" style={{ borderColor: 'orangered' }}>
+                              <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-contain" />
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/80 py-1 px-2 text-center">
                                   <p className="text-white text-xs font-mono">edenaimagegeration.ai</p>
                               </div>
                             </div>
@@ -449,5 +449,3 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
-
-    
