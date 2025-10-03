@@ -8,6 +8,7 @@ import { performSearch } from '@/ai/flows/search';
 import { generateImage } from '@/ai/flows/generate-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -190,7 +191,7 @@ const AIConsciousnessPage = () => {
 
     recognitionRef.current = recognition;
 
-  }, [isClient, processQuery, speak, appMode]);
+  }, [isClient, processQuery, speak]);
 
   useEffect(() => {
     if (isClient) {
@@ -423,7 +424,7 @@ const AIConsciousnessPage = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
-                      className="w-[90vw] md:w-auto flex flex-col items-center"
+                      className="w-full max-w-md flex flex-col items-center"
                   >
                       {isLoading ? (
                           <p className="text-lg" style={{ color: interactiveIconColor }}>
@@ -442,12 +443,12 @@ const AIConsciousnessPage = () => {
                             </div>
                           )}
                           {aiResponse ? (
-                              <>
+                              <ScrollArea className="h-auto max-h-36 w-full rounded-md p-4">
                                 {aiResponseSource && (
-                                    <p className="text-sm text-cyan-400/70 mb-2 font-mono">[{aiResponseSource}]</p>
+                                    <p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>
                                 )}
-                                <p className="text-lg text-center md:max-w-md">{isAngry && '💢 '}{aiResponse}</p>
-                              </>
+                                <p className="text-lg text-left whitespace-pre-wrap">{isAngry && '💢 '}{aiResponse}</p>
+                              </ScrollArea>
                           ) : !generatedImageUrl ? (
                               <p className="text-gray-400">Click the orb to start a voice command.</p>
                           ) : null}
@@ -463,3 +464,5 @@ const AIConsciousnessPage = () => {
 };
 
 export default AIConsciousnessPage;
+
+    
