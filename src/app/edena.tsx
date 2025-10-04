@@ -70,18 +70,19 @@ const AIConsciousnessPage = () => {
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const listenIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   // --- Client-side Action Handler ---
-  const handleClientAction = useCallback(async (actionString: string, speak: (text:string, angry?:boolean, blushing?:boolean)=>void) => {
+  const handleClientAction = useCallback(async (actionString: string, speakFn: (text:string, angry?:boolean, blushing?:boolean)=>void) => {
     if (!actionString || !actionString.includes('(ACTION)')) return false;
 
     const command = actionString.substring(actionString.indexOf('(ACTION)') + '(ACTION)'.length).trim();
     const [action, ...args] = command.split(':');
-    const value = args.join(':');
+    const value = args.join(':').trim();
 
     // List of domains that block embedding
     const blockedDomains = [
@@ -109,14 +110,15 @@ const AIConsciousnessPage = () => {
             }
         } catch (e) {
             console.error("Invalid URL for 'open' action:", value, e);
-            speak("(G) Sir, that doesn't seem to be a valid website address.");
+            speakFn("(G) Sir, that doesn't seem to be a valid website address.");
         }
         return true;
       case 'close':
         setWebsiteUrl(null);
         return true;
       case 'call':
-        if ('contacts' in navigator && 'select' in (navigator as any).contacts) {
+         const contactName = value;
+         if ('contacts' in navigator && 'select' in (navigator as any).contacts) {
             try {
                 const contacts = await (navigator as any).contacts.select(['name', 'tel'], { multiple: false });
                 if (contacts.length > 0 && contacts[0].tel && contacts[0].tel.length > 0) {
@@ -124,23 +126,29 @@ const AIConsciousnessPage = () => {
                     window.location.href = `tel:${number}`;
                     return true;
                 } else {
-                    speak("(G) I couldn't find a number for the selected contact.");
+                    speakFn("(G) I couldn't find a number for the selected contact.");
                     return false;
                 }
             } catch (error) {
                 console.error("Contact Picker API error:", error);
-                speak("(G) I couldn't access your contacts. Please make sure you grant permission.");
+                // Try to prefill if the browser supports it and a name was given
+                if (contactName) {
+                    try {
+                         const contacts = await (navigator as any).contacts.select(['name', 'tel'], {multiple: false});
+                         if (contacts.length > 0 && contacts[0].tel?.[0]) {
+                            window.location.href = `tel:${contacts[0].tel[0]}`;
+                            return true;
+                         }
+                    } catch(e) {
+                        speakFn(`(G) I couldn't access your contacts to find ${contactName}.`);
+                        return false;
+                    }
+                }
+                speakFn("(G) I couldn't access your contacts. Please make sure you grant permission.");
                 return false;
             }
         } else {
-            speak("(G) I'm sorry, Sir, but this browser doesn't support contact access. You can still ask me to call a specific number.");
-            const phoneRegex = /[\d\s+-]{7,}/;
-            const match = value.match(phoneRegex);
-            if (match) {
-                const number = match[0].replace(/\s/g, '');
-                window.location.href = `tel:${number}`;
-                return true;
-            }
+            speakFn("(G) I'm sorry, Sir, but this browser doesn't support contact access.");
             return false;
         }
       default:
@@ -260,7 +268,15 @@ const AIConsciousnessPage = () => {
     recognition.interimResults = false;
 
     recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim();
+      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+      
+      if (websiteUrl) {
+          if (transcript.includes('close')) {
+              setWebsiteUrl(null);
+          }
+          return;
+      }
+
       setSearchText(transcript);
       if (!showSearch) {
           processQuery(transcript);
@@ -269,9 +285,7 @@ const AIConsciousnessPage = () => {
 
     recognition.onerror = (event) => {
       console.error("Speech Recognition Error:", event.error);
-      if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        speak("(G) Sir, I didn't catch that. Please try again.");
-      } else {
+      if (event.error !== 'no-speech' && event.error !== 'aborted') {
         speak("(G) Sir, I'm having trouble with my ears right now. Please try again later.");
       }
     };
@@ -282,7 +296,41 @@ const AIConsciousnessPage = () => {
 
     recognitionRef.current = recognition;
 
-  }, [isClient, processQuery, speak, showSearch]);
+  }, [isClient, processQuery, speak, showSearch, websiteUrl]);
+
+  // Effect to manage listening loop when web viewer is open
+  useEffect(() => {
+    if (websiteUrl && recognitionRef.current) {
+      const startListening = () => {
+        try {
+          recognitionRef.current.start();
+        } catch (e) {
+            // Already listening, ignore
+        }
+      };
+
+      // Start immediately, then set interval
+      startListening();
+      listenIntervalRef.current = setInterval(startListening, 5000);
+
+    } else {
+      if (listenIntervalRef.current) {
+        clearInterval(listenIntervalRef.current);
+        listenIntervalRef.current = null;
+        if (isListening) {
+            recognitionRef.current?.stop();
+        }
+      }
+    }
+    // Cleanup function
+    return () => {
+      if (listenIntervalRef.current) {
+        clearInterval(listenIntervalRef.current);
+        listenIntervalRef.current = null;
+      }
+    };
+  }, [websiteUrl, isListening]);
+
 
   useEffect(() => {
     if (isClient) {
@@ -300,6 +348,8 @@ const AIConsciousnessPage = () => {
   }, [isClient]);
   
   const handleListen = () => {
+    if (websiteUrl) return; // Disable manual listening when web viewer is open
+
     if (isLoading) {
         setIsLoading(false);
         resetState(false);
@@ -564,7 +614,7 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                                 <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{isBlushing && '😊 '}{aiResponse}</p>
                               </ScrollArea>
                           ) : !generatedImageUrl ? (
-                            <p className="text-lg text-muted-foreground whitespace-nowrap">Click the orb to start a voice command.</p>
+                            <p className="text-lg text-muted-foreground whitespace-nowrap">{websiteUrl ? 'Say "close" to exit viewer.' : 'Click the orb to start a voice command.'}</p>
                           ) : null}
                         </>
                       )}
@@ -579,3 +629,5 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 };
 
 export default AIConsciousnessPage;
+
+    
