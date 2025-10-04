@@ -113,6 +113,7 @@ const AIConsciousnessPage = () => {
         'netflix.com',
         'amazon.com',
         'whatsapp.com',
+        'snapchat.com',
     ];
 
     switch (action) {
