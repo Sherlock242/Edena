@@ -318,5 +318,3 @@ export function getGreetingResponse(query: string): string | null {
 
   return null;
 }
-
-    
