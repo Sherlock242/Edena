@@ -468,7 +468,27 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
       <div className="flex flex-col h-screen bg-black text-white p-4 overflow-hidden" onClick={handleContainerClick}>
         <header className="absolute top-0 left-0 right-0 p-4 z-10">
           <div className="flex items-center justify-between w-full">
-              <div className="relative flex items-center h-9 w-[80%] max-w-xl mr-4">
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
+                        <Menu style={{ color: menuIconColor }} />
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
+                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                    <div className="flex flex-col space-y-8">
+                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
+                            <Search className="mr-4 h-8 w-8" />
+                            <span>Search Edena</span>
+                        </Button>
+                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
+                            <ImageIcon className="mr-4 h-8 w-8" />
+                            <span>Image Edena</span>
+                        </Button>
+                    </div>
+                </SheetContent>
+              </Sheet>
+              <div className="relative flex items-center justify-end h-9 w-[80%] max-w-xl ml-4">
                 <AnimatePresence mode="wait">
                   {showSearch ? (
                     <motion.div
@@ -511,26 +531,6 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                   )}
                 </AnimatePresence>
               </div>
-              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
-                        <Menu style={{ color: menuIconColor }} />
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
-                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                    <div className="flex flex-col space-y-8">
-                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
-                            <Search className="mr-4 h-8 w-8" />
-                            <span>Search Edena</span>
-                        </Button>
-                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
-                            <ImageIcon className="mr-4 h-8 w-8" />
-                            <span>Image Edena</span>
-                        </Button>
-                    </div>
-                </SheetContent>
-              </Sheet>
           </div>
         </header>
 
