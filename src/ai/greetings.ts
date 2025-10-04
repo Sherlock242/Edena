@@ -247,7 +247,13 @@ const greetings: Record<string, string[]> = {
   'open youtube': ["(ACTION) open:https://www.youtube.com"],
   'open google': ["(ACTION) open:https://www.google.com"],
   'open wikipedia': ["(ACTION) open:https://www.wikipedia.org"],
-  'call': ["(ACTION) call:"]
+  'call': ["(ACTION) call:"],
+  'close': ["(ACTION) close"],
+  'close it': ["(ACTION) close"],
+  'close this': ["(ACTION) close"],
+  'close website': ["(ACTION) close"],
+  'exit': ["(ACTION) close"],
+  'go back': ["(ACTION) close"],
 };
 
 // Add variants with and without punctuation

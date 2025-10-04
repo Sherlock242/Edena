@@ -100,7 +100,7 @@ const AIConsciousnessPage = () => {
         try {
             const url = new URL(value);
             const hostname = url.hostname.replace('www.', '');
-            if (blockedDomains.includes(hostname)) {
+            if (blockedDomains.some(b => hostname.includes(b))) {
                 // Open in a new tab if the domain is in the blocklist
                 window.open(value, '_blank');
             } else {
@@ -111,6 +111,9 @@ const AIConsciousnessPage = () => {
             console.error("Invalid URL for 'open' action:", value, e);
             speak("(G) Sir, that doesn't seem to be a valid website address.");
         }
+        return true;
+      case 'close':
+        setWebsiteUrl(null);
         return true;
       case 'call':
         if ('contacts' in navigator && 'select' in (navigator as any).contacts) {
