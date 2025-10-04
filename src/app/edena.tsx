@@ -468,69 +468,69 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
       <div className="flex flex-col h-screen bg-black text-white p-4 overflow-hidden" onClick={handleContainerClick}>
         <header className="absolute top-0 left-0 right-0 p-4 z-10">
           <div className="flex items-center justify-between w-full">
-              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
-                        <Menu style={{ color: menuIconColor }} />
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
-                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                    <div className="flex flex-col space-y-8">
-                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
-                            <Search className="mr-4 h-8 w-8" />
-                            <span>Search Edena</span>
+            <div className="relative flex items-center justify-start h-9 w-[80%] max-w-xl mr-4">
+              <AnimatePresence mode="wait">
+                {showSearch ? (
+                  <motion.div
+                    key="search"
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: '100%', opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.5, ease: 'easeInOut' }}
+                    className="overflow-hidden w-full"
+                  >
+                    <form onSubmit={handleManualSearch} ref={searchFormRef} className="flex items-center w-full">
+                      <div className="relative flex-grow">
+                        <Input
+                          type="text"
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          placeholder={appMode === 'search' ? 'Search...' : 'Describe an image...'}
+                          className="w-full bg-transparent border-0 border-b-2 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                          style={{ borderColor: interactiveIconColor }}
+                          autoFocus
+                        />
+                        <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8">
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id={iconGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style={{stopColor: iconStop1, stopOpacity: 1}} />
+                                <stop offset="100%" style={{stopColor: iconStop2, stopOpacity: 1}} />
+                              </linearGradient>
+                            </defs>
+                            <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke={`url(#${iconGradientId})`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
                         </Button>
-                        <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
-                            <ImageIcon className="mr-4 h-8 w-8" />
-                            <span>Image Edena</span>
-                        </Button>
-                    </div>
-                </SheetContent>
-              </Sheet>
-              <div className="relative flex items-center justify-end h-9 w-[80%] max-w-xl ml-4">
-                <AnimatePresence mode="wait">
-                  {showSearch ? (
-                    <motion.div
-                      key="search"
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: '100%', opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      transition={{ duration: 0.5, ease: 'easeInOut' }}
-                      className="overflow-hidden w-full"
-                    >
-                      <form onSubmit={handleManualSearch} ref={searchFormRef} className="flex items-center w-full">
-                        <div className="relative flex-grow">
-                          <Input
-                            type="text"
-                            value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
-                            placeholder={appMode === 'search' ? 'Search...' : 'Describe an image...'}
-                            className="w-full bg-transparent border-0 border-b-2 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            style={{ borderColor: interactiveIconColor }}
-                            autoFocus
-                          />
-                          <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8">
-                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <defs>
-                                <linearGradient id={iconGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                                  <stop offset="0%" style={{stopColor: iconStop1, stopOpacity: 1}} />
-                                  <stop offset="100%" style={{stopColor: iconStop2, stopOpacity: 1}} />
-                                </linearGradient>
-                              </defs>
-                              <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke={`url(#${iconGradientId})`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </Button>
-                        </div>
-                      </form>
-                    </motion.div>
-                  ) : (
-                    <motion.div key="logo" exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                        <EdengramLogo mode={appMode} onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}/>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                      </div>
+                    </form>
+                  </motion.div>
+                ) : (
+                  <motion.div key="logo" exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                      <EdengramLogo mode={appMode} onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}/>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
+                      <Menu style={{ color: menuIconColor }} />
+                  </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                  <div className="flex flex-col space-y-8">
+                      <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
+                          <Search className="mr-4 h-8 w-8" />
+                          <span>Search Edena</span>
+                      </Button>
+                      <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
+                          <ImageIcon className="mr-4 h-8 w-8" />
+                          <span>Image Edena</span>
+                      </Button>
+                  </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </header>
 
