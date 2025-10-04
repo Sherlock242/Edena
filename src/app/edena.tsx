@@ -76,6 +76,24 @@ const AIConsciousnessPage = () => {
     setIsClient(true);
   }, []);
 
+  const resetState = useCallback((startLoading = true) => {
+    setAiResponse('');
+    setAiResponseSource('');
+    setGeneratedImageUrl(null);
+    if (startLoading) {
+      setIsLoading(true);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const closeWebViewer = useCallback(() => {
+    if (websiteUrl) {
+      setWebsiteUrl(null);
+      resetState(false);
+    }
+  }, [websiteUrl, resetState]);
+
   // --- Client-side Action Handler ---
   const handleClientAction = useCallback(async (actionString: string, speakFn: (text:string, angry?:boolean, blushing?:boolean)=>void) => {
     if (!actionString || !actionString.includes('(ACTION)')) return false;
@@ -114,7 +132,7 @@ const AIConsciousnessPage = () => {
         }
         return true;
       case 'close':
-        setWebsiteUrl(null);
+        closeWebViewer();
         return true;
       case 'call':
          const contactName = value;
@@ -154,18 +172,7 @@ const AIConsciousnessPage = () => {
       default:
         return false;
     }
-  }, []);
-
-  const resetState = useCallback((startLoading = true) => {
-    setAiResponse('');
-    setAiResponseSource('');
-    setGeneratedImageUrl(null);
-    if (startLoading) {
-      setIsLoading(true);
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
+  }, [closeWebViewer]);
   
   const speak = useCallback(async (text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
     if (!isClient || !window.speechSynthesis) return;
@@ -271,8 +278,8 @@ const AIConsciousnessPage = () => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
       
       if (websiteUrl) {
-          if (transcript.includes('close')) {
-              setWebsiteUrl(null);
+          if (transcript.includes('close') || transcript.includes('clothes')) {
+              closeWebViewer();
           }
           return;
       }
@@ -296,16 +303,20 @@ const AIConsciousnessPage = () => {
 
     recognitionRef.current = recognition;
 
-  }, [isClient, processQuery, speak, showSearch, websiteUrl]);
+  }, [isClient, processQuery, speak, showSearch, websiteUrl, closeWebViewer]);
 
   // Effect to manage listening loop when web viewer is open
   useEffect(() => {
-    if (websiteUrl && recognitionRef.current) {
+    if (websiteUrl && recognitionRef.current && !isListening) {
       const startListening = () => {
         try {
-          recognitionRef.current.start();
+          if (!isListening) { // Double-check to prevent race conditions
+            recognitionRef.current.start();
+            setIsListening(true);
+          }
         } catch (e) {
             // Already listening, ignore
+            console.warn("Recognition already started.");
         }
       };
 
@@ -313,13 +324,12 @@ const AIConsciousnessPage = () => {
       startListening();
       listenIntervalRef.current = setInterval(startListening, 5000);
 
-    } else {
-      if (listenIntervalRef.current) {
-        clearInterval(listenIntervalRef.current);
-        listenIntervalRef.current = null;
-        if (isListening) {
-            recognitionRef.current?.stop();
-        }
+    } else if (!websiteUrl && listenIntervalRef.current) {
+      clearInterval(listenIntervalRef.current);
+      listenIntervalRef.current = null;
+      if (isListening) {
+          recognitionRef.current?.stop();
+          setIsListening(false);
       }
     }
     // Cleanup function
@@ -348,8 +358,6 @@ const AIConsciousnessPage = () => {
   }, [isClient]);
   
   const handleListen = () => {
-    if (websiteUrl) return; // Disable manual listening when web viewer is open
-
     if (isLoading) {
         setIsLoading(false);
         resetState(false);
@@ -368,13 +376,15 @@ const AIConsciousnessPage = () => {
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
-      resetState(false);
+      // Don't reset state here, let the onend handler manage it
       return;
     }
     
     if (recognitionRef.current) {
         setIsListening(true);
-        resetState(false);
+        if (!websiteUrl) {
+          resetState(false);
+        }
         recognitionRef.current.start();
     } else {
         speak("(G) Sir, I'm sorry, my voice recognition isn't available on this browser.");
@@ -623,7 +633,7 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
           </div>
         </div>
       </div>
-      {websiteUrl && <WebsiteViewer url={websiteUrl} onClose={() => setWebsiteUrl(null)} />}
+      {websiteUrl && <WebsiteViewer url={websiteUrl} onClose={closeWebViewer} />}
     </>
   );
 };
