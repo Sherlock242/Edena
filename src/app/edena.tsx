@@ -15,6 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { WebsiteViewer } from '@/components/website-viewer';
 
 
 type AppMode = 'search' | 'image';
@@ -48,53 +49,6 @@ type Particle = {
   delay: number;
 };
 
-// --- Client-side Action Handler ---
-const handleClientAction = async (actionString: string, speak: (text:string, angry?:boolean, blushing?:boolean)=>void) => {
-  if (!actionString || !actionString.includes('(ACTION)')) return false;
-
-  const command = actionString.substring(actionString.indexOf('(ACTION)') + '(ACTION)'.length).trim();
-  const [action, ...args] = command.split(':');
-  const value = args.join(':');
-
-  switch (action) {
-    case 'open':
-      window.open(value, '_blank');
-      return true;
-    case 'call':
-        if ('contacts' in navigator && 'select' in navigator.contacts) {
-            try {
-                const contacts = await (navigator.contacts as any).select(['name', 'tel'], { multiple: false });
-                if (contacts.length > 0 && contacts[0].tel && contacts[0].tel.length > 0) {
-                    const number = contacts[0].tel[0];
-                    window.location.href = `tel:${number}`;
-                    return true;
-                } else {
-                    speak("(G) I couldn't find a number for the selected contact.");
-                    return false;
-                }
-            } catch (error) {
-                console.error("Contact Picker API error:", error);
-                speak("(G) I couldn't access your contacts. Please make sure you grant permission.");
-                return false;
-            }
-        } else {
-            speak("(G) I'm sorry, Sir, but this browser doesn't support contact access. You can still ask me to call a specific number.");
-            // Fallback for browsers that don't support the API, or if user provides a number directly.
-            const phoneRegex = /[\d\s+-]{7,}/;
-            const match = value.match(phoneRegex);
-            if (match) {
-                const number = match[0].replace(/\s/g, '');
-                window.location.href = `tel:${number}`;
-                return true;
-            }
-            return false;
-        }
-    default:
-      return false;
-  }
-};
-
-
 const AIConsciousnessPage = () => {
   const [appMode, setAppMode] = useState<AppMode>('search');
   const [isListening, setIsListening] = useState(false);
@@ -111,6 +65,7 @@ const AIConsciousnessPage = () => {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [websiteUrl, setWebsiteUrl] = useState<string | null>(null);
 
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
@@ -118,6 +73,51 @@ const AIConsciousnessPage = () => {
   
   useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  // --- Client-side Action Handler ---
+  const handleClientAction = useCallback(async (actionString: string, speak: (text:string, angry?:boolean, blushing?:boolean)=>void) => {
+    if (!actionString || !actionString.includes('(ACTION)')) return false;
+
+    const command = actionString.substring(actionString.indexOf('(ACTION)') + '(ACTION)'.length).trim();
+    const [action, ...args] = command.split(':');
+    const value = args.join(':');
+
+    switch (action) {
+      case 'open':
+        setWebsiteUrl(value);
+        return true;
+      case 'call':
+        if ('contacts' in navigator && 'select' in (navigator as any).contacts) {
+            try {
+                const contacts = await (navigator as any).contacts.select(['name', 'tel'], { multiple: false });
+                if (contacts.length > 0 && contacts[0].tel && contacts[0].tel.length > 0) {
+                    const number = contacts[0].tel[0];
+                    window.location.href = `tel:${number}`;
+                    return true;
+                } else {
+                    speak("(G) I couldn't find a number for the selected contact.");
+                    return false;
+                }
+            } catch (error) {
+                console.error("Contact Picker API error:", error);
+                speak("(G) I couldn't access your contacts. Please make sure you grant permission.");
+                return false;
+            }
+        } else {
+            speak("(G) I'm sorry, Sir, but this browser doesn't support contact access. You can still ask me to call a specific number.");
+            const phoneRegex = /[\d\s+-]{7,}/;
+            const match = value.match(phoneRegex);
+            if (match) {
+                const number = match[0].replace(/\s/g, '');
+                window.location.href = `tel:${number}`;
+                return true;
+            }
+            return false;
+        }
+      default:
+        return false;
+    }
   }, []);
 
   const resetState = useCallback((startLoading = true) => {
@@ -176,7 +176,7 @@ const AIConsciousnessPage = () => {
     };
 
     window.speechSynthesis.speak(utterance);
-  }, [isClient]);
+  }, [isClient, handleClientAction]);
 
   const processQuery = useCallback(async (query: string) => {
     if (!query) {
@@ -545,10 +545,9 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
           </div>
         </div>
       </div>
+      {websiteUrl && <WebsiteViewer url={websiteUrl} onClose={() => setWebsiteUrl(null)} />}
     </>
   );
 };
 
 export default AIConsciousnessPage;
-
-    
