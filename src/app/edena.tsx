@@ -48,6 +48,26 @@ type Particle = {
   delay: number;
 };
 
+// --- Client-side Action Handler ---
+const handleClientAction = (actionString: string) => {
+  if (!actionString || !actionString.startsWith('(ACTION)')) return false;
+
+  const command = actionString.replace('(ACTION)', '').trim();
+  const [action, ...args] = command.split(':');
+  const value = args.join(':');
+
+  switch (action) {
+    case 'open':
+      window.open(value, '_blank');
+      return true;
+    case 'call':
+      window.location.href = `tel:${value}`;
+      return true;
+    default:
+      return false;
+  }
+};
+
 
 const AIConsciousnessPage = () => {
   const [appMode, setAppMode] = useState<AppMode>('search');
@@ -87,6 +107,12 @@ const AIConsciousnessPage = () => {
   
   const speak = useCallback((text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
     if (!isClient || !window.speechSynthesis) return;
+
+    // Check for client-side actions before speaking
+    if (handleClientAction(text)) {
+      setIsLoading(false);
+      return;
+    }
 
     window.speechSynthesis.cancel(); // Cancel any previous speech
 
@@ -153,7 +179,7 @@ const AIConsciousnessPage = () => {
       } else { // appMode === 'image'
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        const imageReadyResponses = ["Your image is ready", "आपकी छवि तैयार है"];
+        const imageReadyResponses = ["Sir, your image is ready", "Sir, aapki chhavi taiyaar hai"];
         const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
         speak(`(Img) ${imageReadyResponses[randomIndex]}`);
         setAiResponseSource('');

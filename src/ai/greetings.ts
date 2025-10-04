@@ -243,6 +243,11 @@ const greetings: Record<string, string[]> = {
   'where are you from': ["I'm from the 'cloud' - a network of Google's data centers.", "I live inside a computer, so you could say I'm from the internet!"],
   'why are you here': ["I'm here to help you by providing information and answering your questions.", "My purpose is to be a helpful and informative AI assistant."],
 
+  // New Actions
+  'open youtube': ["(ACTION) open:https://www.youtube.com"],
+  'open google': ["(ACTION) open:https://www.google.com"],
+  'open wikipedia': ["(ACTION) open:https://www.wikipedia.org"],
+  'call': ["(ACTION) call:"]
 };
 
 // Add variants with and without punctuation
@@ -287,6 +292,31 @@ export function getGreetingResponse(query: string): string | null {
     const randomIndex = Math.floor(Math.random() * responseOptions.length);
     return responseOptions[randomIndex];
   }
+  
+  // Handle dynamic actions like "open" and "call"
+  const lowerQuery = normalizedQuery;
+  if (lowerQuery.startsWith('open ')) {
+      const site = lowerQuery.substring(5).trim().replace(/\s/g, '');
+      if (site) {
+          return `(ACTION) open:https://www.${site}.com`;
+      }
+  }
+  
+  if (lowerQuery.startsWith('call ')) {
+      const contact = lowerQuery.substring(5).trim();
+      // This is a simplified version. A real implementation would look up the number.
+      // For now, we'll assume the user says a number or we can't handle it.
+      const phoneRegex = /[\d\s+-]{7,}/;
+      const match = contact.match(phoneRegex);
+      if (match) {
+        const number = match[0].replace(/\s/g, '');
+        return `(ACTION) call:${number}`;
+      }
+      return `(G) I can't find a number for ${contact}. Please say the number you wish to call.`;
+  }
+
 
   return null;
 }
+
+    
