@@ -293,7 +293,6 @@ export function getGreetingResponse(query: string): string | null {
     return responseOptions[randomIndex];
   }
   
-  // Handle dynamic actions like "open" and "call"
   const lowerQuery = normalizedQuery;
   if (lowerQuery.startsWith('open ')) {
       const site = lowerQuery.substring(5).trim().replace(/\s/g, '');
@@ -304,17 +303,11 @@ export function getGreetingResponse(query: string): string | null {
   
   if (lowerQuery.startsWith('call ')) {
       const contact = lowerQuery.substring(5).trim();
-      // This is a simplified version. A real implementation would look up the number.
-      // For now, we'll assume the user says a number or we can't handle it.
-      const phoneRegex = /[\d\s+-]{7,}/;
-      const match = contact.match(phoneRegex);
-      if (match) {
-        const number = match[0].replace(/\s/g, '');
-        return `(ACTION) call:${number}`;
-      }
-      return `(G) I can't find a number for ${contact}. Please say the number you wish to call.`;
+      return `(ACTION) call:${contact}`;
   }
 
 
   return null;
 }
+
+    
