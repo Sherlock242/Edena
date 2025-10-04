@@ -112,6 +112,7 @@ const AIConsciousnessPage = () => {
         'linkedin.com',
         'netflix.com',
         'amazon.com',
+        'whatsapp.com',
     ];
 
     switch (action) {
@@ -639,5 +640,3 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
 };
 
 export default AIConsciousnessPage;
-
-    
