@@ -83,9 +83,34 @@ const AIConsciousnessPage = () => {
     const [action, ...args] = command.split(':');
     const value = args.join(':');
 
+    // List of domains that block embedding
+    const blockedDomains = [
+        'google.com',
+        'youtube.com',
+        'facebook.com',
+        'instagram.com',
+        'twitter.com',
+        'linkedin.com',
+        'netflix.com',
+        'amazon.com',
+    ];
+
     switch (action) {
       case 'open':
-        setWebsiteUrl(value);
+        try {
+            const url = new URL(value);
+            const hostname = url.hostname.replace('www.', '');
+            if (blockedDomains.includes(hostname)) {
+                // Open in a new tab if the domain is in the blocklist
+                window.open(value, '_blank');
+            } else {
+                // Otherwise, open in the web viewer
+                setWebsiteUrl(value);
+            }
+        } catch (e) {
+            console.error("Invalid URL for 'open' action:", value, e);
+            speak("(G) Sir, that doesn't seem to be a valid website address.");
+        }
         return true;
       case 'call':
         if ('contacts' in navigator && 'select' in (navigator as any).contacts) {
