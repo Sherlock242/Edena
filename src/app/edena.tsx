@@ -517,7 +517,7 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                       <Menu style={{ color: menuIconColor }} />
                   </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
+              <SheetContent side="left" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                   <div className="flex flex-col space-y-8">
                       <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
