@@ -79,6 +79,7 @@ const AIConsciousnessPage = () => {
   const listenIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const draggableRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     setIsClient(true);
@@ -307,6 +308,7 @@ const AIConsciousnessPage = () => {
       setSearchText(transcript);
       if (!showSearch) { processQuery(transcript); }
     };
+
     recognition.onerror = (event) => {
       console.error("Speech Recognition Error:", event.error);
        if (event.error === 'not-allowed') {
@@ -569,8 +571,14 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
 
       <AnimatePresence>
         {appMode === 'vision' && showVideo && hasCameraPermission && (
-            <Draggable>
-                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="fixed bottom-4 right-4 w-48 h-auto bg-black border-2 border-purple-500 rounded-lg shadow-2xl cursor-move z-50 overflow-hidden">
+            <Draggable nodeRef={draggableRef}>
+                <motion.div 
+                    ref={draggableRef}
+                    initial={{ opacity: 0, scale: 0.8 }} 
+                    animate={{ opacity: 1, scale: 1 }} 
+                    exit={{ opacity: 0, scale: 0.8 }} 
+                    className="fixed bottom-4 right-4 w-48 h-auto bg-black border-2 border-purple-500 rounded-lg shadow-2xl cursor-move z-50 overflow-hidden"
+                >
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                      <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => setShowVideo(false)}>
                         <VideoOff className="h-4 w-4 text-white" />
