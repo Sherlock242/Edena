@@ -294,7 +294,9 @@ const AIConsciousnessPage = () => {
 
     recognition.onerror = (event) => {
       console.error("Speech Recognition Error:", event.error);
-      if (event.error !== 'no-speech' && event.error !== 'aborted') {
+       if (event.error === 'not-allowed') {
+        speak("(G) Sir, it appears you have blocked microphone access. Please enable it in your browser settings to use voice commands.");
+      } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
         speak("(G) Sir, I'm having trouble with my ears right now. Please try again later.");
       }
     };
