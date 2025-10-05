@@ -499,17 +499,17 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
                       <Menu style={{ color: menuIconColor }} />
                   </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
+              <SheetContent side="left" className="w-full h-full bg-black/80 backdrop-blur-sm border-0 shadow-none p-8 flex flex-col items-center justify-center">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                  <div className="flex flex-col space-y-8">
-                      <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
-                          <Search className="mr-4 h-8 w-8" /><span>Search</span>
+                  <div className="flex flex-col space-y-8 text-center">
+                      <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
+                          <Search className="mr-6 h-10 w-10" /><span>Search</span>
                       </Button>
-                      <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
-                          <ImageIcon className="mr-4 h-8 w-8" /><span>Image Gen</span>
+                      <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
+                          <ImageIcon className="mr-6 h-10 w-10" /><span>Image Gen</span>
                       </Button>
-                      <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('vision')}>
-                          <Video className="mr-4 h-8 w-8" /><span>Vision</span>
+                      <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('vision')}>
+                          <Video className="mr-6 h-10 w-10" /><span>Vision</span>
                       </Button>
                   </div>
               </SheetContent>
