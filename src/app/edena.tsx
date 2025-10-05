@@ -72,6 +72,7 @@ const AIConsciousnessPage = () => {
   const [websiteUrl, setWebsiteUrl] = useState<string | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [showVideo, setShowVideo] = useState(false);
+  const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
 
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
@@ -341,14 +342,12 @@ const AIConsciousnessPage = () => {
   }, [websiteUrl, isListening]);
 
   useEffect(() => {
-    if (appMode !== 'vision') {
-        if (videoRef.current?.srcObject) {
-            (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
-            videoRef.current.srcObject = null;
-        }
+    if (appMode !== 'vision' && videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        setVideoStream(null);
         setShowVideo(false);
     }
-  }, [appMode]);
+  }, [appMode, videoStream]);
 
   const getCameraPermission = async () => {
     if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
@@ -360,9 +359,7 @@ const AIConsciousnessPage = () => {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         setHasCameraPermission(true);
         setShowVideo(true);
-        if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-        }
+        setVideoStream(stream);
     } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
@@ -370,6 +367,13 @@ const AIConsciousnessPage = () => {
         speak("(G) Sir, camera access was denied. Please enable it in your browser settings to use Vision Mode.");
     }
   };
+
+  useEffect(() => {
+    if (videoStream && videoRef.current) {
+      videoRef.current.srcObject = videoStream;
+      videoRef.current.play();
+    }
+  }, [videoStream]);
 
   useEffect(() => {
     if (isClient) {
