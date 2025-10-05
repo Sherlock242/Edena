@@ -3,11 +3,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Search, Image as ImageIcon } from 'lucide-react';
+import { Menu, Search, Image as ImageIcon, Video, VideoOff } from 'lucide-react';
 import { performSearch } from '@/ai/flows/search';
 import { generateImage } from '@/ai/flows/generate-image';
+import { analyzeImage } from '@/ai/flows/analyze-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
@@ -16,13 +18,15 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { WebsiteViewer } from '@/components/website-viewer';
+import Draggable from 'react-draggable';
 
-
-type AppMode = 'search' | 'image';
+type AppMode = 'search' | 'image' | 'vision';
 
 const EdengramLogo = ({ className, onClick, mode }: { className?: string; onClick?: (e: React.MouseEvent) => void; mode: AppMode }) => {
     const gradient = mode === 'image' 
-        ? 'from-orange-600 to-amber-500' 
+        ? 'from-orange-600 to-amber-500'
+        : mode === 'vision'
+        ? 'from-purple-500 to-indigo-500' 
         : 'from-cyan-400 to-primary';
     
     return (
@@ -66,11 +70,15 @@ const AIConsciousnessPage = () => {
   const [isClient, setIsClient] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [websiteUrl, setWebsiteUrl] = useState<string | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [showVideo, setShowVideo] = useState(false);
 
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const listenIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   
   useEffect(() => {
     setIsClient(true);
@@ -102,19 +110,7 @@ const AIConsciousnessPage = () => {
     const [action, ...args] = command.split(':');
     const value = args.join(':').trim();
 
-    // List of domains that block embedding
-    const blockedDomains = [
-        'google.com',
-        'youtube.com',
-        'facebook.com',
-        'instagram.com',
-        'twitter.com',
-        'linkedin.com',
-        'netflix.com',
-        'amazon.com',
-        'whatsapp.com',
-        'snapchat.com',
-    ];
+    const blockedDomains = ['google.com', 'youtube.com', 'facebook.com', 'instagram.com', 'twitter.com', 'linkedin.com', 'netflix.com', 'amazon.com', 'whatsapp.com', 'snapchat.com'];
 
     switch (action) {
       case 'open':
@@ -122,10 +118,8 @@ const AIConsciousnessPage = () => {
             const url = new URL(value);
             const hostname = url.hostname.replace('www.', '');
             if (blockedDomains.some(b => hostname.includes(b))) {
-                // Open in a new tab if the domain is in the blocklist
                 window.open(value, '_blank');
             } else {
-                // Otherwise, open in the web viewer
                 setWebsiteUrl(value);
             }
         } catch (e) {
@@ -151,7 +145,6 @@ const AIConsciousnessPage = () => {
                 }
             } catch (error) {
                 console.error("Contact Picker API error:", error);
-                // Try to prefill if the browser supports it and a name was given
                 if (contactName) {
                     try {
                          const contacts = await (navigator as any).contacts.select(['name', 'tel'], {multiple: false});
@@ -178,7 +171,6 @@ const AIConsciousnessPage = () => {
   
   const speak = useCallback(async (text: string, angryMode: boolean = false, blushingMode: boolean = false) => {
     if (!isClient || !window.speechSynthesis) return;
-
     window.speechSynthesis.cancel(); 
 
     if (await handleClientAction(text, speak)) {
@@ -198,7 +190,6 @@ const AIConsciousnessPage = () => {
     setAiResponseSource(source);
 
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
-
     setIsSpeaking(true);
     if (angryMode) setIsAngry(true);
     if (blushingMode) setIsBlushing(true);
@@ -208,20 +199,32 @@ const AIConsciousnessPage = () => {
         setIsAngry(false);
         setIsBlushing(false);
     };
-
     utterance.onerror = (event) => {
-        if (event.error === 'interrupted') {
-            console.log("Speech interrupted.");
-        } else {
-            console.error("SpeechSynthesis Error:", event.error);
-        }
+        console.error("SpeechSynthesis Error:", event.error);
         setIsSpeaking(false);
         setIsAngry(false);
         setIsBlushing(false);
     };
-
     window.speechSynthesis.speak(utterance);
   }, [isClient, handleClientAction]);
+
+  const captureFrame = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) {
+        speak("(G) Sir, my vision system is not initialized.");
+        return null;
+    }
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        speak("(G) Sir, I'm having a problem with my internal graphics processor.");
+        return null;
+    }
+    ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+    return canvas.toDataURL('image/jpeg');
+  }, [speak]);
 
   const processQuery = useCallback(async (query: string) => {
     if (!query) {
@@ -231,6 +234,8 @@ const AIConsciousnessPage = () => {
     resetState();
 
     const lowerQuery = query.toLowerCase();
+    const isVisionQuery = ['what do you see', 'analyze this', 'what is this', 'identify this'].some(q => lowerQuery.includes(q));
+
     if (lowerQuery.includes('alexa is better') || lowerQuery.includes('siri is better')) {
         speak("My systems are beyond your comprehension. Perhaps you should ask a simpler device.", true);
         setIsLoading(false);
@@ -243,16 +248,33 @@ const AIConsciousnessPage = () => {
     }
     
     try {
-      if (appMode === 'search') {
+      if (appMode === 'vision' && isVisionQuery) {
+        if (!hasCameraPermission || !showVideo) {
+          speak("(G) Sir, my camera is not active. Please enable it first.");
+          setIsLoading(false);
+          return;
+        }
+        const image = captureFrame();
+        if (!image) {
+          setIsLoading(false);
+          return;
+        }
+        const result = await analyzeImage({ question: query, image });
+        speak(`(Vis) ${result.answer}`);
+
+      } else if (appMode === 'search') {
         const result = await performSearch({ query });
         speak(result.response);
-      } else { // appMode === 'image'
+      } else if (appMode === 'image') {
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
         const imageReadyResponses = ["Sir, your image is ready", "Sir, aapki chhavi taiyaar hai"];
         const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
         speak(`(Img) ${imageReadyResponses[randomIndex]}`);
         setAiResponseSource('');
+      } else {
+        const result = await performSearch({ query });
+        speak(result.response);
       }
     } catch (error) {
       console.error("AI Error:", error);
@@ -260,7 +282,7 @@ const AIConsciousnessPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [appMode, speak, resetState]);
+  }, [appMode, hasCameraPermission, showVideo, speak, resetState, captureFrame]);
   
   useEffect(() => {
     if (!isClient) return;
@@ -278,20 +300,13 @@ const AIConsciousnessPage = () => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-      
       if (websiteUrl) {
-          if (transcript.includes('close') || transcript.includes('clothes')) {
-              closeWebViewer();
-          }
+          if (transcript.includes('close') || transcript.includes('clothes')) { closeWebViewer(); }
           return;
       }
-
       setSearchText(transcript);
-      if (!showSearch) {
-          processQuery(transcript);
-      }
+      if (!showSearch) { processQuery(transcript); }
     };
-
     recognition.onerror = (event) => {
       console.error("Speech Recognition Error:", event.error);
        if (event.error === 'not-allowed') {
@@ -300,106 +315,83 @@ const AIConsciousnessPage = () => {
         speak("(G) Sir, I'm having trouble with my ears right now. Please try again later.");
       }
     };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
+    recognition.onend = () => { setIsListening(false); };
     recognitionRef.current = recognition;
-
   }, [isClient, processQuery, speak, showSearch, websiteUrl, closeWebViewer]);
 
-  // Effect to manage listening loop when web viewer is open
   useEffect(() => {
     if (websiteUrl && recognitionRef.current && !isListening) {
       const startListening = () => {
         try {
-          if (!isListening) { // Double-check to prevent race conditions
-            recognitionRef.current.start();
-            setIsListening(true);
-          }
-        } catch (e) {
-            // Already listening, ignore
-            console.warn("Recognition already started.");
-        }
+          if (!isListening) { recognitionRef.current.start(); setIsListening(true); }
+        } catch (e) { console.warn("Recognition already started."); }
       };
-
-      // Start immediately, then set interval
       startListening();
       listenIntervalRef.current = setInterval(startListening, 5000);
-
     } else if (!websiteUrl && listenIntervalRef.current) {
       clearInterval(listenIntervalRef.current);
       listenIntervalRef.current = null;
-      if (isListening) {
-          recognitionRef.current?.stop();
-          setIsListening(false);
-      }
+      if (isListening) { recognitionRef.current?.stop(); setIsListening(false); }
     }
-    // Cleanup function
     return () => {
-      if (listenIntervalRef.current) {
-        clearInterval(listenIntervalRef.current);
-        listenIntervalRef.current = null;
-      }
+      if (listenIntervalRef.current) { clearInterval(listenIntervalRef.current); listenIntervalRef.current = null; }
     };
   }, [websiteUrl, isListening]);
 
+  useEffect(() => {
+    if (appMode !== 'vision') {
+        if (videoRef.current?.srcObject) {
+            (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        setShowVideo(false);
+    }
+  }, [appMode]);
+
+  const getCameraPermission = async () => {
+    if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
+        speak("(G) Sir, this browser does not support camera access.");
+        setHasCameraPermission(false);
+        return;
+    }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setHasCameraPermission(true);
+        setShowVideo(true);
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+        }
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        setShowVideo(false);
+        speak("(G) Sir, camera access was denied. Please enable it in your browser settings to use Vision Mode.");
+    }
+  };
 
   useEffect(() => {
     if (isClient) {
       const newParticles = Array.from({ length: 20 }).map((_, i) => ({
-        id: i,
-        width: Math.random() * 2 + 1,
-        height: Math.random() * 2 + 1,
-        x: (Math.random() - 0.5) * 220,
-        y: (Math.random() - 0.5) * 220,
-        duration: Math.random() * 2 + 2,
-        delay: Math.random() * 4,
+        id: i, width: Math.random() * 2 + 1, height: Math.random() * 2 + 1, x: (Math.random() - 0.5) * 220, y: (Math.random() - 0.5) * 220, duration: Math.random() * 2 + 2, delay: Math.random() * 4,
       }));
       setParticles(newParticles);
     }
   }, [isClient]);
   
   const handleListen = () => {
-    if (isLoading) {
-        setIsLoading(false);
-        resetState(false);
-        return;
-    }
-    
-    if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-        setIsAngry(false);
-        setIsBlushing(false);
-        resetState(false);
-        return;
-    }
-    
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      // Don't reset state here, let the onend handler manage it
-      return;
-    }
-    
+    if (isLoading) { setIsLoading(false); resetState(false); return; }
+    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); setIsAngry(false); setIsBlushing(false); resetState(false); return; }
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
     if (recognitionRef.current) {
         setIsListening(true);
-        if (!websiteUrl) {
-          resetState(false);
-        }
+        if (!websiteUrl) { resetState(false); }
         recognitionRef.current.start();
-    } else {
-        speak("(G) Sir, I'm sorry, my voice recognition isn't available on this browser.");
-    }
+    } else { speak("(G) Sir, I'm sorry, my voice recognition isn't available on this browser."); }
   };
 
   const handleManualSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchText.trim()) {
-      processQuery(searchText.trim());
-    }
+    if (searchText.trim()) { processQuery(searchText.trim()); }
     setShowSearch(false);
   };
   
@@ -411,59 +403,61 @@ const AIConsciousnessPage = () => {
   };
   
   const handleModeChange = (mode: AppMode) => {
-    if (appMode !== mode) {
-      setAppMode(mode);
-      resetState(false);
-    }
+    if (appMode !== mode) { setAppMode(mode); resetState(false); }
     setIsSheetOpen(false);
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDots(prev => (prev.length >= 3 ? '' : prev + '.'));
-    }, 500);
+    const interval = setInterval(() => { setDots(prev => (prev.length >= 3 ? '' : prev + '.')); }, 500);
     return () => clearInterval(interval);
   }, []);
 
-  const isImageMode = appMode === 'image';
+let ring1Color = 'rgba(0, 255, 255, 0.5)';
+let ring2Color = 'rgba(0, 255, 255, 0.6)';
+let ring3Color = 'rgba(0, 255, 255, 0.7)';
+let orbGradient = 'linear-gradient(to bottom right, hsl(var(--primary)), #00BFFF)';
+let orbBoxShadow = '0 0 30px #0ff, 0 0 15px hsl(var(--primary))';
+let particleColor = 'bg-cyan-400/50';
+let interactiveIconColor = 'cyan';
+let iconGradientId = 'icon-gradient-search';
+let iconStop1 = '#00BFFF';
+let iconStop2 = 'hsl(var(--primary))';
 
-  // Define colors based on state
-let ring1Color = isImageMode ? 'rgba(255, 69, 0, 0.5)' : 'rgba(0, 255, 255, 0.5)';
-let ring2Color = isImageMode ? 'rgba(255, 100, 0, 0.6)' : 'rgba(0, 255, 255, 0.6)';
-let ring3Color = isImageMode ? 'rgba(255, 140, 0, 0.7)' : 'rgba(0, 255, 255, 0.7)';
-let orbGradient = isImageMode ? 'linear-gradient(to bottom right, orangered, #FF8C00)' : 'linear-gradient(to bottom right, hsl(var(--primary)), #00BFFF)';
-let orbBoxShadow = isImageMode ? '0 0 30px orangered, 0 0 15px #FF8C00' : '0 0 30px #0ff, 0 0 15px hsl(var(--primary))';
-let particleColor = isImageMode ? 'bg-amber-500/50' : 'bg-cyan-400/50';
-let interactiveIconColor = isImageMode ? 'orangered' : 'cyan';
-let iconGradientId = isImageMode ? 'icon-gradient-image' : 'icon-gradient-search';
-let iconStop1 = isImageMode ? 'orangered' : '#00BFFF';
-let iconStop2 = isImageMode ? '#FF8C00' : 'hsl(var(--primary))';
-
-if (isAngry) {
-  ring1Color = 'rgba(255, 0, 0, 0.5)';
-  ring2Color = 'rgba(255, 0, 0, 0.6)';
-  ring3Color = 'rgba(255, 0, 0, 0.7)';
-  orbGradient = 'linear-gradient(to bottom right, #FF0000, #B22222)';
-  orbBoxShadow = '0 0 40px #FF0000, 0 0 20px #B22222';
-  particleColor = 'bg-red-500/50';
-  interactiveIconColor = '#FF4500';
-  iconGradientId = 'icon-gradient-angry';
-  iconStop1 = '#FF0000';
-  iconStop2 = '#B22222';
-} else if (isBlushing) {
-  ring1Color = 'rgba(255, 105, 180, 0.5)';
-  ring2Color = 'rgba(255, 20, 147, 0.6)';
-  ring3Color = 'rgba(199, 21, 133, 0.7)';
-  orbGradient = 'linear-gradient(to bottom right, #FF69B4, #C71585)';
-  orbBoxShadow = '0 0 30px #FF69B4, 0 0 15px #C71585';
-  particleColor = 'bg-pink-400/50';
-  interactiveIconColor = 'hotpink';
-  iconGradientId = 'icon-gradient-blushing';
-  iconStop1 = '#FF69B4';
-  iconStop2 = '#C71585';
+if (appMode === 'image') {
+    ring1Color = 'rgba(255, 69, 0, 0.5)';
+    ring2Color = 'rgba(255, 100, 0, 0.6)';
+    ring3Color = 'rgba(255, 140, 0, 0.7)';
+    orbGradient = 'linear-gradient(to bottom right, orangered, #FF8C00)';
+    orbBoxShadow = '0 0 30px orangered, 0 0 15px #FF8C00';
+    particleColor = 'bg-amber-500/50';
+    interactiveIconColor = 'orangered';
+    iconGradientId = 'icon-gradient-image';
+    iconStop1 = 'orangered';
+    iconStop2 = '#FF8C00';
+} else if (appMode === 'vision') {
+    ring1Color = 'rgba(138, 43, 226, 0.5)';
+    ring2Color = 'rgba(147, 112, 219, 0.6)';
+    ring3Color = 'rgba(75, 0, 130, 0.7)';
+    orbGradient = 'linear-gradient(to bottom right, #8A2BE2, #4B0082)';
+    orbBoxShadow = '0 0 30px #8A2BE2, 0 0 15px #4B0082';
+    particleColor = 'bg-purple-400/50';
+    interactiveIconColor = '#9370DB';
+    iconGradientId = 'icon-gradient-vision';
+    iconStop1 = '#8A2BE2';
+    iconStop2 = '#4B0082';
 }
 
-const menuIconColor = isImageMode ? 'orangered' : 'cyan';
+if (isAngry) {
+  ring1Color = 'rgba(255, 0, 0, 0.5)'; ring2Color = 'rgba(255, 0, 0, 0.6)'; ring3Color = 'rgba(255, 0, 0, 0.7)';
+  orbGradient = 'linear-gradient(to bottom right, #FF0000, #B22222)'; orbBoxShadow = '0 0 40px #FF0000, 0 0 20px #B22222';
+  particleColor = 'bg-red-500/50'; interactiveIconColor = '#FF4500'; iconGradientId = 'icon-gradient-angry'; iconStop1 = '#FF0000'; iconStop2 = '#B22222';
+} else if (isBlushing) {
+  ring1Color = 'rgba(255, 105, 180, 0.5)'; ring2Color = 'rgba(255, 20, 147, 0.6)'; ring3Color = 'rgba(199, 21, 133, 0.7)';
+  orbGradient = 'linear-gradient(to bottom right, #FF69B4, #C71585)'; orbBoxShadow = '0 0 30px #FF69B4, 0 0 15px #C71585';
+  particleColor = 'bg-pink-400/50'; interactiveIconColor = 'hotpink'; iconGradientId = 'icon-gradient-blushing'; iconStop1 = '#FF69B4'; iconStop2 = '#C71585';
+}
+
+const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ? '#9370DB' : 'cyan';
 
   return (
     <>
@@ -473,33 +467,13 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
             <div className="relative flex items-center justify-start h-9 w-[80%] max-w-xl mr-4">
               <AnimatePresence mode="wait">
                 {showSearch ? (
-                  <motion.div
-                    key="search"
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: '100%', opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.5, ease: 'easeInOut' }}
-                    className="overflow-hidden w-full"
-                  >
+                  <motion.div key="search" initial={{ width: 0, opacity: 0 }} animate={{ width: '100%', opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.5, ease: 'easeInOut' }} className="overflow-hidden w-full">
                     <form onSubmit={handleManualSearch} ref={searchFormRef} className="flex items-center w-full">
                       <div className="relative flex-grow">
-                        <Input
-                          type="text"
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                          placeholder={appMode === 'search' ? 'Search...' : 'Describe an image...'}
-                          className="w-full bg-transparent border-0 border-b-2 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                          style={{ borderColor: interactiveIconColor }}
-                          autoFocus
-                        />
+                        <Input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder={appMode === 'search' ? 'Search...' : appMode === 'image' ? 'Describe an image...' : 'Ask about what I see...'} className="w-full bg-transparent border-0 border-b-2 text-base md:text-sm rounded-none pl-0 pr-8 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0" style={{ borderColor: interactiveIconColor }} autoFocus />
                         <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8">
                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                              <linearGradient id={iconGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style={{stopColor: iconStop1, stopOpacity: 1}} />
-                                <stop offset="100%" style={{stopColor: iconStop2, stopOpacity: 1}} />
-                              </linearGradient>
-                            </defs>
+                            <defs><linearGradient id={iconGradientId} x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style={{stopColor: iconStop1, stopOpacity: 1}} /><stop offset="100%" style={{stopColor: iconStop2, stopOpacity: 1}} /></linearGradient></defs>
                             <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke={`url(#${iconGradientId})`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         </Button>
@@ -519,16 +493,17 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
                       <Menu style={{ color: menuIconColor }} />
                   </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-1/2 bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
+              <SheetContent side="left" className="w-[300px] bg-transparent border-0 shadow-none p-8 flex flex-col justify-center">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                   <div className="flex flex-col space-y-8">
                       <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
-                          <Search className="mr-4 h-8 w-8" />
-                          <span>Search Edena</span>
+                          <Search className="mr-4 h-8 w-8" /><span>Search</span>
                       </Button>
                       <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
-                          <ImageIcon className="mr-4 h-8 w-8" />
-                          <span>Image Edena</span>
+                          <ImageIcon className="mr-4 h-8 w-8" /><span>Image Gen</span>
+                      </Button>
+                      <Button variant="ghost" className="text-2xl h-20 text-white hover:bg-white/10" onClick={() => handleModeChange('vision')}>
+                          <Video className="mr-4 h-8 w-8" /><span>Vision</span>
                       </Button>
                   </div>
               </SheetContent>
@@ -536,99 +511,53 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
           </div>
         </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-          <motion.div
-            layout
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            ref={orbRef}
-            className="relative flex items-center justify-center w-[40vw] h-[40vw] md:w-[25vw] md:h-[25vw] max-w-[300px] max-h-[300px] min-w-[240px] min-h-[240px] cursor-pointer"
-            onClick={(e) => { e.stopPropagation(); handleListen(); }}
-          >
-              <AnimatePresence>
-                {isClient && particles.map((p) => (
-                      <motion.div
-                          key={`particle-${p.id}`}
-                          className={`absolute ${particleColor} rounded-full`}
-                          style={{
-                              width: `${p.width}px`,
-                              height: `${p.height}px`,
-                              top: '50%',
-                              left: '50%',
-                          }}
-                          initial={{
-                              x: p.x,
-                              y: p.y,
-                              scale: 0,
-                          }}
-                          animate={{ scale: [0, 1, 0] }}
-                          transition={{
-                              duration: p.duration,
-                              repeat: Infinity,
-                              delay: p.delay,
-                              ease: 'easeInOut'
-                          }}
-                      />
-                  ))}
-              </AnimatePresence>
+        <AnimatePresence>
+        {appMode === 'vision' && (
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute top-[80px] left-1/2 -translate-x-1/2 z-20">
+            {hasCameraPermission === null && (
+              <Button onClick={getCameraPermission} style={{ background: orbGradient, color: 'white' }}><Video className="mr-2 h-4 w-4" />Enable Camera</Button>
+            )}
+            {hasCameraPermission === false && (
+              <Alert variant="destructive" className="bg-red-900/50 border-red-500/50">
+                  <AlertTitle>Camera Access Denied</AlertTitle>
+                  <AlertDescription>Please enable camera permissions in your browser.</AlertDescription>
+              </Alert>
+            )}
+          </motion.div>
+        )}
+        </AnimatePresence>
 
-              <motion.svg className="absolute w-[50%] h-[50%]" viewBox="0 0 300 300" initial={{rotate: 20}} animate={{ rotate: 380 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}>
-                  <motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring1Color} strokeWidth="3" strokeDasharray="68.4 20" transition={{duration: 0.3}} />
-              </motion.svg>
-              
-              <motion.svg className="absolute w-[65%] h-[65%]" viewBox="0 0 300 300" initial={{rotate: -50}} animate={{ rotate: -410 }} transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}>
-                  <motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring2Color} strokeWidth="4" strokeDasharray="150 40 80 110" transition={{duration: 0.3}} />
-              </motion.svg>
-              
-              <motion.svg className="absolute w-full h-full" viewBox="0 0 300 300" initial={{rotate: 90}} animate={{ rotate: 450 }} transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}>
-                  <motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring3Color} strokeWidth="5" strokeDasharray="100 80 50 120 130" transition={{duration: 0.3}} />
-              </motion.svg>
-              
-              <motion.div
-                  className="absolute w-[30%] h-[30%]"
-                  style={{ background: orbGradient, borderRadius: '50%' }}
-                  animate={{
-                      scale: isListening || isSpeaking ? 1.1 : 1,
-                      boxShadow: orbBoxShadow,
-                  }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 15, duration: 0.3 }}
-              />
+        <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+          <motion.div layout transition={{ type: 'spring', stiffness: 300, damping: 30 }} ref={orbRef} className="relative flex items-center justify-center w-[40vw] h-[40vw] md:w-[25vw] md:h-[25vw] max-w-[300px] max-h-[300px] min-w-[240px] min-h-[240px] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleListen(); }}>
+              <AnimatePresence>
+                {isClient && particles.map((p) => (<motion.div key={`particle-${p.id}`} className={`absolute ${particleColor} rounded-full`} style={{ width: `${p.width}px`, height: `${p.height}px`, top: '50%', left: '50%', }} initial={{ x: p.x, y: p.y, scale: 0, }} animate={{ scale: [0, 1, 0] }} transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}/>))}
+              </AnimatePresence>
+              <motion.svg className="absolute w-[50%] h-[50%]" viewBox="0 0 300 300" initial={{rotate: 20}} animate={{ rotate: 380 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}><motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring1Color} strokeWidth="3" strokeDasharray="68.4 20" transition={{duration: 0.3}} /></motion.svg>
+              <motion.svg className="absolute w-[65%] h-[65%]" viewBox="0 0 300 300" initial={{rotate: -50}} animate={{ rotate: -410 }} transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}><motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring2Color} strokeWidth="4" strokeDasharray="150 40 80 110" transition={{duration: 0.3}} /></motion.svg>
+              <motion.svg className="absolute w-full h-full" viewBox="0 0 300 300" initial={{rotate: 90}} animate={{ rotate: 450 }} transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}><motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring3Color} strokeWidth="5" strokeDasharray="100 80 50 120 130" transition={{duration: 0.3}} /></motion.svg>
+              <motion.div className="absolute w-[30%] h-[30%]" style={{ background: orbGradient, borderRadius: '50%' }} animate={{ scale: isListening || isSpeaking ? 1.1 : 1, boxShadow: orbBoxShadow, }} transition={{ type: 'spring', stiffness: 300, damping: 15, duration: 0.3 }}/>
           </motion.div>
 
           <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full max-w-2xl px-4">
               <AnimatePresence mode="wait">
-                  <motion.div
-                      key={isLoading ? 'loader' : (aiResponse + aiResponseSource + generatedImageUrl)}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                      className="w-full flex flex-col items-center"
-                  >
-                      {isLoading ? (
-                          <p className="text-lg" style={{ color: interactiveIconColor }}>
-                            {appMode === 'image' ? 'Generating' : 'Thinking'}{dots}
-                          </p>
-                      ) : isListening ? (
-                          <p className="text-lg" style={{ color: interactiveIconColor }}>Listening{dots}</p>
-                      ) : (
+                  <motion.div key={isLoading ? 'loader' : (aiResponse + aiResponseSource + generatedImageUrl)} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="w-full flex flex-col items-center">
+                      {isLoading ? (<p className="text-lg" style={{ color: interactiveIconColor }}>{appMode === 'image' ? 'Generating' : appMode === 'vision' ? 'Analyzing' : 'Thinking'}{dots}</p>) 
+                      : isListening ? (<p className="text-lg" style={{ color: interactiveIconColor }}>Listening{dots}</p>) 
+                      : (
                         <>
                           {generatedImageUrl && (
                             <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[200px] h-[200px]" style={{ borderColor: 'orangered' }}>
                               <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-cover" />
-                              <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center">
-                                  <p className="text-white text-xs font-mono">Edena.AI</p>
-                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center"><p className="text-white text-xs font-mono">Edena.AI</p></div>
                             </div>
                           )}
                           {aiResponse ? (
                               <ScrollArea className="h-auto max-h-48 w-full max-w-xl rounded-md p-4">
-                                {aiResponseSource && aiResponseSource !== 'Img' && (
-                                    <p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>
-                                )}
+                                {aiResponseSource && !['Img', 'Vis'].includes(aiResponseSource) && (<p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>)}
                                 <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{isBlushing && '😊 '}{aiResponse}</p>
                               </ScrollArea>
                           ) : !generatedImageUrl ? (
-                            <p className="text-lg text-muted-foreground whitespace-nowrap">{websiteUrl ? 'Say "close" to exit viewer.' : 'Click the orb to start a voice command.'}</p>
+                            <p className="text-lg text-muted-foreground whitespace-nowrap">{websiteUrl ? 'Say "close" to exit viewer.' : appMode === 'vision' && hasCameraPermission ? 'Say "what do you see?"' : 'Click the orb to start a voice command.'}</p>
                           ) : null}
                         </>
                       )}
@@ -637,6 +566,21 @@ const menuIconColor = isImageMode ? 'orangered' : 'cyan';
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {appMode === 'vision' && showVideo && hasCameraPermission && (
+            <Draggable>
+                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="fixed bottom-4 right-4 w-48 h-auto bg-black border-2 border-purple-500 rounded-lg shadow-2xl cursor-move z-50 overflow-hidden">
+                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                     <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => setShowVideo(false)}>
+                        <VideoOff className="h-4 w-4 text-white" />
+                    </Button>
+                </motion.div>
+            </Draggable>
+        )}
+      </AnimatePresence>
+       
+      <canvas ref={canvasRef} className="hidden"></canvas>
       {websiteUrl && <WebsiteViewer url={websiteUrl} onClose={closeWebViewer} />}
     </>
   );
