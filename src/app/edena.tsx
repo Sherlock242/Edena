@@ -311,7 +311,7 @@ const AIConsciousnessPage = () => {
 
     recognition.onerror = (event) => {
       console.error("Speech Recognition Error:", event.error);
-       if (event.error === 'not-allowed') {
+      if (event.error === 'not-allowed') {
         speak("(G) Sir, it appears you have blocked microphone access. Please enable it in your browser settings to use voice commands.");
       } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
         speak("(G) Sir, I'm having trouble with my ears right now. Please try again later.");
@@ -348,6 +348,16 @@ const AIConsciousnessPage = () => {
     }
   }, [appMode, videoStream]);
 
+  const handleCameraToggle = () => {
+    if (hasCameraPermission === null) {
+      getCameraPermission();
+    } else if (hasCameraPermission) {
+      setShowVideo(prev => !prev);
+    } else {
+      speak("(G) Sir, camera access was denied. Please enable it in your browser settings to use Vision Mode.");
+    }
+  };
+
   const getCameraPermission = async () => {
     if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
         speak("(G) Sir, this browser does not support camera access.");
@@ -370,9 +380,9 @@ const AIConsciousnessPage = () => {
   useEffect(() => {
     if (videoStream && videoRef.current) {
       videoRef.current.srcObject = videoStream;
-      videoRef.current.play();
+      videoRef.current.play().catch(e => console.error("Video play failed:", e));
     }
-  }, [videoStream]);
+  }, [videoStream, showVideo]);
 
   useEffect(() => {
     if (isClient) {
@@ -522,6 +532,9 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
             {hasCameraPermission === null && (
               <Button onClick={getCameraPermission} style={{ background: orbGradient, color: 'white' }}><Video className="mr-2 h-4 w-4" />Enable Camera</Button>
             )}
+             {hasCameraPermission && (
+              <Button onClick={handleCameraToggle} style={{ background: orbGradient, color: 'white' }}><Video className="mr-2 h-4 w-4" />{showVideo ? 'Hide Camera' : 'Show Camera'}</Button>
+            )}
             {hasCameraPermission === false && (
               <Alert variant="destructive" className="bg-red-900/50 border-red-500/50">
                   <AlertTitle>Camera Access Denied</AlertTitle>
@@ -580,7 +593,7 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
                     initial={{ opacity: 0, scale: 0.8 }} 
                     animate={{ opacity: 1, scale: 1 }} 
                     exit={{ opacity: 0, scale: 0.8 }} 
-                    className="fixed bottom-4 right-4 w-48 h-auto bg-black border-2 border-purple-500 rounded-lg shadow-2xl cursor-move z-50 overflow-hidden"
+                    className="fixed bottom-4 left-4 w-48 h-auto bg-black border-2 border-purple-500 rounded-lg shadow-2xl cursor-move z-50 overflow-hidden"
                 >
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                      <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => setShowVideo(false)}>
