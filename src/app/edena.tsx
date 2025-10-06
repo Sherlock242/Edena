@@ -236,7 +236,6 @@ const AIConsciousnessPage = () => {
     resetState();
 
     const lowerQuery = query.toLowerCase();
-    const isVisionQuery = ['what do you see', 'analyze this', 'what is this', 'identify this'].some(q => lowerQuery.includes(q));
 
     if (lowerQuery.includes('alexa is better') || lowerQuery.includes('siri is better')) {
         speak("My systems are beyond your comprehension. Perhaps you should ask a simpler device.", true);
@@ -250,7 +249,7 @@ const AIConsciousnessPage = () => {
     }
     
     try {
-      if (appMode === 'vision' && isVisionQuery) {
+      if (appMode === 'vision') {
         if (!hasCameraPermission || !showVideo) {
           speak("(G) Sir, my camera is not active. Please enable it first.");
           setIsLoading(false);
@@ -563,7 +562,7 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
                                 <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{isBlushing && '😊 '}{aiResponse}</p>
                               </ScrollArea>
                           ) : !generatedImageUrl ? (
-                            <p className="text-lg text-muted-foreground whitespace-nowrap">{websiteUrl ? 'Say "close" to exit viewer.' : appMode === 'vision' && hasCameraPermission ? 'Say "what do you see?"' : 'Click the orb to start a voice command.'}</p>
+                            <p className="text-lg text-muted-foreground whitespace-nowrap">{websiteUrl ? 'Say "close" to exit viewer.' : appMode === 'vision' && hasCameraPermission ? 'Ask me anything about what I see.' : 'Click the orb to start a voice command.'}</p>
                           ) : null}
                         </>
                       )}
