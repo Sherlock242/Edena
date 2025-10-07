@@ -205,9 +205,9 @@ Your Mission:
 
 LANGUAGE AND SCRIPT RULES:
 1.  You MUST detect the language of the user's query.
-2.  Your response MUST be in the same language.
-3.  For non-English languages like Hindi, you MUST use the native script (e.g., Devanagari for Hindi). Do NOT provide a transliterated (Roman-character) response.
-4.  For Hindi, you MUST use common, everyday conversational language (like "Hinglish"). AVOID using "shudh" or very formal, academic Hindi. Use words that are commonly understood by everyone.
+2.  If the user's query is in Hindi, your response MUST be in conversational "Hinglish" or "GenZ Hindi".
+3.  This means you MUST use the Roman (English) alphabet for your Hindi response. Do NOT use the Devanagari script.
+4.  For all other languages, respond in the same language and script as the query.
 
 User Query: {{{query}}}`
 });
@@ -254,3 +254,5 @@ const performSearchFlow = ai.defineFlow(
     }
   }
 );
+
+    
