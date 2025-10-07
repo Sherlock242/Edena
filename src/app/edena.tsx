@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Search, Image as ImageIcon, Video, VideoOff } from 'lucide-react';
+import { Menu, Search, Image as ImageIcon, Video, VideoOff, SwitchCamera } from 'lucide-react';
 import { performSearch } from '@/ai/flows/search';
 import { generateImage } from '@/ai/flows/generate-image';
 import { analyzeImage } from '@/ai/flows/analyze-image';
@@ -21,6 +21,7 @@ import { WebsiteViewer } from '@/components/website-viewer';
 import Draggable from 'react-draggable';
 
 type AppMode = 'search' | 'image' | 'vision';
+type FacingMode = 'user' | 'environment';
 
 const EdengramLogo = ({ className, onClick, mode }: { className?: string; onClick?: (e: React.MouseEvent) => void; mode: AppMode }) => {
     const gradient = mode === 'image' 
@@ -73,6 +74,7 @@ const AIConsciousnessPage = () => {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [showVideo, setShowVideo] = useState(false);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+  const [facingMode, setFacingMode] = useState<FacingMode>('user');
 
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
@@ -369,32 +371,30 @@ const AIConsciousnessPage = () => {
     };
   }, [websiteUrl, isListening]);
 
+  const stopVideoStream = useCallback(() => {
+    if (videoStream) {
+      videoStream.getTracks().forEach(track => track.stop());
+      setVideoStream(null);
+    }
+  }, [videoStream]);
+
   useEffect(() => {
-    if (appMode !== 'vision' && videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        setVideoStream(null);
+    if (appMode !== 'vision') {
+        stopVideoStream();
         setShowVideo(false);
     }
-  }, [appMode, videoStream]);
+  }, [appMode, stopVideoStream]);
 
-  const handleCameraToggle = () => {
-    if (hasCameraPermission === null) {
-      getCameraPermission();
-    } else if (hasCameraPermission) {
-      setShowVideo(prev => !prev);
-    } else {
-      speak("(G) Sir, camera access was denied. Please enable it in your browser settings to use Vision Mode.");
-    }
-  };
-
-  const getCameraPermission = async () => {
+  const getCameraPermission = useCallback(async (mode: FacingMode) => {
     if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
         speak("(G) Sir, this browser does not support camera access.");
         setHasCameraPermission(false);
         return;
     }
+    stopVideoStream(); // Stop any existing stream
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const constraints = { video: { facingMode: { exact: mode } } };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         setHasCameraPermission(true);
         setShowVideo(true);
         setVideoStream(stream);
@@ -402,9 +402,33 @@ const AIConsciousnessPage = () => {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
         setShowVideo(false);
-        speak("(G) Sir, camera access was denied. Please enable it in your browser settings to use Vision Mode.");
+        // Try the other facing mode as a fallback
+        if ((error as Error).name === 'OverconstrainedError' && mode === 'environment') {
+            speak("(G) Sir, I was unable to access the back camera. Switching to the front camera.");
+            setFacingMode('user');
+            getCameraPermission('user');
+        } else {
+            speak("(G) Sir, camera access was denied. Please enable it in your browser settings to use Vision Mode.");
+        }
+    }
+  }, [speak, stopVideoStream]);
+
+
+  const handleCameraToggle = () => {
+    if (hasCameraPermission === null) {
+      getCameraPermission(facingMode);
+    } else if (hasCameraPermission) {
+      setShowVideo(prev => !prev);
+    } else {
+      speak("(G) Sir, camera access was denied. Please enable it in your browser settings to use Vision Mode.");
     }
   };
+
+  const handleSwitchCamera = () => {
+    const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(newFacingMode);
+    getCameraPermission(newFacingMode);
+  }
 
   useEffect(() => {
     if (videoStream && videoRef.current) {
@@ -547,12 +571,15 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
 
         <AnimatePresence>
         {appMode === 'vision' && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute top-[80px] left-1/2 -translate-x-1/2 z-20">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute top-[80px] left-1/2 -translate-x-1/2 z-20 flex gap-2">
             {hasCameraPermission === null && (
-              <Button onClick={getCameraPermission} style={{ background: orbGradient, color: 'white' }}><Video className="mr-2 h-4 w-4" />Enable Camera</Button>
+              <Button onClick={() => getCameraPermission(facingMode)} style={{ background: orbGradient, color: 'white' }}><Video className="mr-2 h-4 w-4" />Enable Camera</Button>
             )}
              {hasCameraPermission && (
-              <Button onClick={handleCameraToggle} style={{ background: orbGradient, color: 'white' }}><Video className="mr-2 h-4 w-4" />{showVideo ? 'Hide Camera' : 'Show Camera'}</Button>
+                <>
+                    <Button onClick={handleCameraToggle} style={{ background: orbGradient, color: 'white' }}><Video className="mr-2 h-4 w-4" />{showVideo ? 'Hide Camera' : 'Show Camera'}</Button>
+                    <Button onClick={handleSwitchCamera} style={{ background: orbGradient, color: 'white' }}><SwitchCamera className="mr-2 h-4 w-4" />Switch Camera</Button>
+                </>
             )}
             {hasCameraPermission === false && (
               <Alert variant="destructive" className="bg-red-900/50 border-red-500/50">
@@ -630,3 +657,5 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
 };
 
 export default AIConsciousnessPage;
+
+    
