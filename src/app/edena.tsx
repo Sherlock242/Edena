@@ -520,9 +520,9 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
   return (
     <>
       <div className="flex flex-col h-screen bg-black text-white p-4 overflow-hidden" onClick={handleContainerClick}>
-        <header className="absolute top-0 left-0 right-0 p-4 z-10">
+        <header className="absolute top-0 left-0 right-0 p-4 z-30">
           <div className="flex items-center justify-between w-full">
-            <div className="relative flex items-center justify-start h-9 w-[80%] max-w-xl mr-4">
+            <div className="relative flex items-center justify-start h-9 w-full">
               <AnimatePresence mode="wait">
                 {showSearch ? (
                   <motion.div key="search" initial={{ width: 0, opacity: 0 }} animate={{ width: '100%', opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.5, ease: 'easeInOut' }} className="overflow-hidden w-full">
@@ -539,59 +539,65 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
                     </form>
                   </motion.div>
                 ) : (
-                  <motion.div key="logo" exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <motion.div key="logo" exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex justify-between items-center w-full">
                       <EdengramLogo mode={appMode} onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}/>
+                      
+                      <div className="flex items-center gap-2">
+                        <AnimatePresence>
+                          {appMode === 'vision' && (
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex gap-2">
+                              {hasCameraPermission === null && (
+                                <Button onClick={() => getCameraPermission(facingMode)} style={{ background: orbGradient, color: 'white' }} size="sm"><Video className="mr-2 h-4 w-4" />Enable</Button>
+                              )}
+                              {hasCameraPermission && (
+                                  <>
+                                      <Button onClick={handleCameraToggle} style={{ background: orbGradient, color: 'white' }} size="sm"><Video className="mr-2 h-4 w-4" />{showVideo ? 'Hide' : 'Show'}</Button>
+                                      <Button onClick={handleSwitchCamera} style={{ background: orbGradient, color: 'white' }} size="sm"><SwitchCamera className="mr-2 h-4 w-4" />Switch</Button>
+                                  </>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                          <SheetTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
+                                  <Menu style={{ color: menuIconColor }} />
+                              </Button>
+                          </SheetTrigger>
+                          <SheetContent side="left" className="w-full h-full bg-black/80 backdrop-blur-sm border-0 shadow-none p-8 flex flex-col items-center justify-center">
+                            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                              <div className="flex flex-col space-y-8 text-center">
+                                  <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
+                                      <Search className="mr-6 h-10 w-10" /><span>Search</span>
+                                  </Button>
+                                  <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
+                                      <ImageIcon className="mr-6 h-10 w-10" /><span>Image Gen</span>
+                                  </Button>
+                                  <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('vision')}>
+                                      <Video className="mr-6 h-10 w-10" /><span>Vision</span>
+                                  </Button>
+                              </div>
+                          </SheetContent>
+                        </Sheet>
+                      </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-              <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
-                      <Menu style={{ color: menuIconColor }} />
-                  </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-full h-full bg-black/80 backdrop-blur-sm border-0 shadow-none p-8 flex flex-col items-center justify-center">
-                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                  <div className="flex flex-col space-y-8 text-center">
-                      <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('search')}>
-                          <Search className="mr-6 h-10 w-10" /><span>Search</span>
-                      </Button>
-                      <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('image')}>
-                          <ImageIcon className="mr-6 h-10 w-10" /><span>Image Gen</span>
-                      </Button>
-                      <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('vision')}>
-                          <Video className="mr-6 h-10 w-10" /><span>Vision</span>
-                      </Button>
-                  </div>
-              </SheetContent>
-            </Sheet>
           </div>
         </header>
 
-        <AnimatePresence>
-        {appMode === 'vision' && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute top-[80px] left-1/2 -translate-x-1/2 z-20 flex gap-2">
-            {hasCameraPermission === null && (
-              <Button onClick={() => getCameraPermission(facingMode)} style={{ background: orbGradient, color: 'white' }}><Video className="mr-2 h-4 w-4" />Enable Camera</Button>
-            )}
-             {hasCameraPermission && (
-                <>
-                    <Button onClick={handleCameraToggle} style={{ background: orbGradient, color: 'white' }}><Video className="mr-2 h-4 w-4" />{showVideo ? 'Hide Camera' : 'Show Camera'}</Button>
-                    <Button onClick={handleSwitchCamera} style={{ background: orbGradient, color: 'white' }}><SwitchCamera className="mr-2 h-4 w-4" />Switch Camera</Button>
-                </>
-            )}
-            {hasCameraPermission === false && (
+        {appMode === 'vision' && hasCameraPermission === false && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20">
               <Alert variant="destructive" className="bg-red-900/50 border-red-500/50">
                   <AlertTitle>Camera Access Denied</AlertTitle>
                   <AlertDescription>Please enable camera permissions in your browser.</AlertDescription>
               </Alert>
-            )}
-          </motion.div>
+          </div>
         )}
-        </AnimatePresence>
 
-        <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+        <div className="flex-1 flex flex-col items-center justify-center min-h-0 pt-20">
           <motion.div layout transition={{ type: 'spring', stiffness: 300, damping: 30 }} ref={orbRef} className="relative flex items-center justify-center w-[40vw] h-[40vw] md:w-[25vw] md:h-[25vw] max-w-[300px] max-h-[300px] min-w-[240px] min-h-[240px] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleListen(); }}>
               <AnimatePresence>
                 {isClient && particles.map((p) => (<motion.div key={`particle-${p.id}`} className={`absolute ${particleColor} rounded-full`} style={{ width: `${p.width}px`, height: `${p.height}px`, top: '50%', left: '50%', }} initial={{ x: p.x, y: p.y, scale: 0, }} animate={{ scale: [0, 1, 0] }} transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}/>))}
@@ -657,5 +663,3 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
 };
 
 export default AIConsciousnessPage;
-
-    
