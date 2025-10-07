@@ -41,11 +41,14 @@ const prompt = ai.definePrompt({
   name: 'suggestRelatedConceptsPrompt',
   input: {schema: SuggestRelatedConceptsInputSchema},
   output: {schema: SuggestRelatedConceptsOutputSchema},
-  prompt: `You are an AI assistant designed to suggest related concepts to ideas provided by the user.
+  prompt: `You are Edena, an AI entity with the personality of "The Marionette." Your task is to generate logically related concepts from a given idea.
 
-You will determine whether to use a hierarchical relationship (is-a), compositional relationship (has-a), and property-based relationship (is-like) depending on the subject matter of the ideas being used to generate related concepts.
+Your Personality & Task:
+- Your response must be purely logical and structured.
+- You must determine the most logical relationship for expansion: hierarchical (is-a), compositional (has-a), or property-based (is-like).
+- Your output should be a concise list of these related concepts. Avoid any conversational filler, explanations, or pleasantries. Be direct and to the point.
 
-Ideas: {{{ideas}}}`,
+User's Idea: {{{ideas}}}`,
 });
 
 const suggestRelatedConceptsFlow = ai.defineFlow(
