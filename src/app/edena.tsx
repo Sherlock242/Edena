@@ -184,7 +184,10 @@ const AIConsciousnessPage = () => {
     const source = sourceMatch ? sourceMatch[1] : '';
     let textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
     
-    if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir') && source !== 'Img' && !blushingMode) {
+    // Simple check for Hindi characters
+    const isHindi = /[\u0900-\u097F]/.test(textToSpeak);
+
+    if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir') && source !== 'Img' && !blushingMode && !isHindi) {
       textToSpeak = `Sir, ${textToSpeak}`;
     }
 
@@ -192,6 +195,10 @@ const AIConsciousnessPage = () => {
     setAiResponseSource(source);
 
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    if (isHindi) {
+        utterance.lang = 'hi-IN';
+    }
+    
     setIsSpeaking(true);
     if (angryMode) setIsAngry(true);
     if (blushingMode) setIsBlushing(true);
@@ -269,9 +276,9 @@ const AIConsciousnessPage = () => {
       } else if (appMode === 'image') {
         const result = await generateImage({ prompt: query });
         setGeneratedImageUrl(result.imageUrl);
-        const imageReadyResponses = ["Sir, your image is ready", "Sir, aapki chhavi taiyaar hai"];
-        const randomIndex = Math.floor(Math.random() * imageReadyResponses.length);
-        speak(`(Img) ${imageReadyResponses[randomIndex]}`);
+        const imageReadyResponses = ["Sir, your image is ready", "सर, आपकी छवि तैयार है"];
+        const isHindiQuery = /[\u0900-\u097F]/.test(query);
+        speak(`(Img) ${isHindiQuery ? imageReadyResponses[1] : imageReadyResponses[0]}`);
         setAiResponseSource('');
       } else {
         const result = await performSearch({ query });
@@ -300,9 +307,17 @@ const AIConsciousnessPage = () => {
     recognition.interimResults = false;
 
     recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+      const transcript = event.results[event.results.length - 1][0].transcript.trim();
+      
+      // Basic language detection to switch recognition language
+      if (/[\u0900-\u097F]/.test(transcript)) {
+        recognition.lang = 'hi-IN';
+      } else {
+        recognition.lang = 'en-US';
+      }
+        
       if (websiteUrl) {
-          if (transcript.includes('close') || transcript.includes('clothes')) { closeWebViewer(); }
+          if (transcript.toLowerCase().includes('close') || transcript.toLowerCase().includes('clothes')) { closeWebViewer(); }
           return;
       }
       setSearchText(transcript);
@@ -320,6 +335,20 @@ const AIConsciousnessPage = () => {
     recognition.onend = () => { setIsListening(false); };
     recognitionRef.current = recognition;
   }, [isClient, processQuery, speak, showSearch, websiteUrl, closeWebViewer]);
+  
+  const handleListen = () => {
+    if (isLoading) { setIsLoading(false); resetState(false); return; }
+    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); setIsAngry(false); setIsBlushing(false); resetState(false); return; }
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+    if (recognitionRef.current) {
+        setIsListening(true);
+        if (!websiteUrl) { resetState(false); }
+        // Try to guess language from current search text to set initial recognition lang
+        const isHindi = /[\u0900-\u097F]/.test(searchText);
+        recognitionRef.current.lang = isHindi ? 'hi-IN' : 'en-US';
+        recognitionRef.current.start();
+    } else { speak("(G) Sir, I'm sorry, my voice recognition isn't available on this browser."); }
+  };
 
   useEffect(() => {
     if (websiteUrl && recognitionRef.current && !isListening) {
@@ -393,16 +422,6 @@ const AIConsciousnessPage = () => {
     }
   }, [isClient]);
   
-  const handleListen = () => {
-    if (isLoading) { setIsLoading(false); resetState(false); return; }
-    if (isSpeaking) { window.speechSynthesis.cancel(); setIsSpeaking(false); setIsAngry(false); setIsBlushing(false); resetState(false); return; }
-    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
-    if (recognitionRef.current) {
-        setIsListening(true);
-        if (!websiteUrl) { resetState(false); }
-        recognitionRef.current.start();
-    } else { speak("(G) Sir, I'm sorry, my voice recognition isn't available on this browser."); }
-  };
 
   const handleManualSearch = (e: React.FormEvent) => {
     e.preventDefault();
