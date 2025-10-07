@@ -191,6 +191,8 @@ const prompt = ai.definePrompt({
   tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool, jokesTool],
   prompt: `You are a helpful AI assistant named Edena. Your goal is to provide concise and accurate answers to the user's query.
 
+IMPORTANT: You must detect the language of the user's query. Your response MUST be in the same language and use the same script (e.g., Devanagari for Hindi). Do NOT provide a transliterated (Roman-character) response for other languages.
+
 You have access to several tools to help you answer questions. Based on the user's query, you must decide to use one of the tools to get the most up-to-date and relevant information. For specific topics like "first battle of panipat", prefer a specialized tool like Wikipedia over a general web search.
 
 Query: {{{query}}}`,
