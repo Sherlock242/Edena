@@ -22,11 +22,11 @@ export default function AdminPage() {
           Admin Panel
         </h1>
       </header>
-      <main className="flex-1 flex flex-col items-center justify-center text-center">
+      <main className="flex-1 flex flex-col items-start justify-center text-left pl-8 md:pl-16">
         <div className="w-full max-w-sm">
           <HologramEffect />
         </div>
-        <p className="text-muted-foreground mt-8 text-center px-4">
+        <p className="text-muted-foreground mt-8 text-left max-w-sm">
           Continuous operation analysis. System integrity and performance metrics.
         </p>
       </main>
