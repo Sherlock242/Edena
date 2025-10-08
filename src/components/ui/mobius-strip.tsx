@@ -5,7 +5,7 @@ import React from 'react';
 export function MobiusStrip() {
   const id = React.useId();
   return (
-    <svg width="100%" viewBox="-10 -10 120 70" xmlns="http://www.w3.org/2000/svg">
+    <svg width="100%" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id={`grad-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" style={{ stopColor: '#8A2BE2' }}>
@@ -20,23 +20,21 @@ export function MobiusStrip() {
         </linearGradient>
       </defs>
       <path
-        d="M 50,5 C 95,5 95,45 50,45 C 5,45 5,5 50,5"
-        strokeWidth="6"
+        d="M 25,25 C 0,0 50,0 50,25 C 50,50 100,50 75,25 C 50,0 0,50 25,25"
+        strokeWidth="4"
         strokeLinecap="round"
         fill="none"
         stroke={`url(#grad-${id})`}
-        strokeDasharray="283"
-        transform="skewX(30) translate(0, 0)"
+        strokeDasharray="157"
       >
-        <animate attributeName="stroke-dashoffset" values="283;-283" dur="8s" repeatCount="indefinite" />
+        <animate attributeName="stroke-dashoffset" values="157;-157" dur="8s" repeatCount="indefinite" />
       </path>
        <path
-        d="M 50,5 C 5,5 5,45 50,45 C 95,45 95,5 50,5"
-        strokeWidth="10"
+        d="M 25,25 C 0,0 50,0 50,25 C 50,50 100,50 75,25 C 50,0 0,50 25,25"
+        strokeWidth="8"
         strokeLinecap="round"
         fill="none"
         stroke="rgba(138, 43, 226, 0.2)"
-        transform="skewX(30) translate(0, 0)"
       />
     </svg>
   );
