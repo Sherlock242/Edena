@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { MobiusStrip } from '@/components/ui/mobius-strip';
+import { HologramEffect } from '@/components/ui/hologram-effect';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function AdminPage() {
       </header>
       <main className="flex-1 flex flex-col items-center justify-center">
         <div className="w-full max-w-md">
-          <MobiusStrip />
+          <HologramEffect />
         </div>
         <p className="text-muted-foreground mt-8 text-center">
           Continuous operation analysis. System integrity and performance metrics.
