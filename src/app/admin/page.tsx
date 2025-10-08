@@ -9,16 +9,15 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col h-screen bg-black text-white overflow-hidden">
-      <header className="flex items-center justify-between w-full p-4 z-10">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+      <header className="relative flex items-center justify-center w-full p-4 z-10">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute left-4">
           <ArrowLeft />
         </Button>
         <h1 className="text-2xl font-jarvis text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
           Admin Panel
         </h1>
-        <div className="w-10"></div>
       </header>
-      <main className="flex-1 flex flex-col items-center justify-center">
+      <main className="flex-1 flex flex-col items-center justify-center text-center">
         <div className="w-full max-w-sm">
           <HologramEffect />
         </div>
