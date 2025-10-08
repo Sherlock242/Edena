@@ -8,10 +8,10 @@ export function MobiusStrip() {
     <svg width="100%" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id={`grad-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style={{ stopColor: '#8A2BE2' }}>
+          <stop offset="0%" style={{ stopColor: 'cyan' }}>
              <animate attributeName="offset" values="0;1;0" dur="4s" repeatCount="indefinite" />
           </stop>
-          <stop offset="50%" style={{ stopColor: '#4B0082' }}>
+          <stop offset="50%" style={{ stopColor: 'orange' }}>
              <animate attributeName="offset" values="0.5;1.5;0.5" dur="4s" repeatCount="indefinite" />
           </stop>
            <stop offset="100%" style={{ stopColor: '#8A2BE2' }}>
