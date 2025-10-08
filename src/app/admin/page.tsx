@@ -8,7 +8,7 @@ export default function AdminPage() {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-black text-white overflow-hidden">
+    <div className="flex flex-col h-screen bg-black text-white">
       <header className="relative flex items-center justify-center w-full p-4 z-10">
         <Button
           variant="ghost"
