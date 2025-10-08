@@ -191,10 +191,10 @@ const AIConsciousnessPage = () => {
     let textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
     
     // Heuristic to detect if the text is likely Hindi/Hinglish
-    const hindiKeywords = ['hai', 'kya', 'kaise', 'mein', 'mera', 'tum', 'aap', 'sir', 'kar', 'diya'];
+    const hindiKeywords = ['hai', 'kya', 'kaise', 'mein', 'mera', 'tum', 'aap', 'sir', 'kar', 'diya', 'nahi', 'hua', 'karta', 'ho', 'tha'];
     const wordCount = textToSpeak.split(/\s+/).length;
     const hindiWordCount = textToSpeak.toLowerCase().split(/\s+/).filter(word => hindiKeywords.includes(word.replace(/[.?,!]/g, ''))).length;
-    const isLikelyHindi = (hindiWordCount / wordCount) > 0.3 || /[\u0900-\u097F]/.test(textToSpeak);
+    const isLikelyHindi = (wordCount > 0 && (hindiWordCount / wordCount) > 0.2) || /[\u0900-\u097F]/.test(textToSpeak);
 
 
     if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir') && source !== 'Img' && !blushingMode && !isLikelyHindi) {
@@ -207,6 +207,8 @@ const AIConsciousnessPage = () => {
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     if (isLikelyHindi) {
         utterance.lang = 'hi-IN';
+    } else {
+        utterance.lang = 'en-IN';
     }
     
     setIsSpeaking(true);
@@ -318,15 +320,6 @@ const AIConsciousnessPage = () => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
-      
-      // Basic language detection to switch recognition language
-      const hindiKeywords = ['hai', 'kya', 'kaise', 'mein', 'mera', 'tum', 'aap'];
-      const isLikelyHindi = hindiKeywords.some(kw => transcript.toLowerCase().includes(kw)) || /[\u0900-\u097F]/.test(transcript);
-      if (isLikelyHindi) {
-        recognition.lang = 'hi-IN';
-      } else {
-        recognition.lang = 'en-IN';
-      }
         
       if (websiteUrl) {
           if (transcript.toLowerCase().includes('close') || transcript.toLowerCase().includes('clothes')) { closeWebViewer(); }
