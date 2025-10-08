@@ -24,7 +24,7 @@ export default function AdminPage() {
       </header>
       <main className="flex-1 flex flex-col items-center justify-center">
         <div className="relative -translate-x-8">
-          <div className="w-full max-w-sm">
+          <div className="w-[400px]">
             <HologramEffect />
           </div>
           <p className="text-muted-foreground mt-8 text-center max-w-sm">
