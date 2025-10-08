@@ -574,10 +574,6 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
                                   <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('vision')}>
                                       <Video className="mr-6 h-10 w-10" /><span>Vision</span>
                                   </Button>
-                                  <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleNavigation('/admin')}>
-                                    <Shield className="mr-6 h-10 w-10" />
-                                    <span>Admin</span>
-                                  </Button>
                               </div>
                           </SheetContent>
                         </Sheet>
@@ -687,5 +683,3 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
 };
 
 export default AIConsciousnessPage;
-
-    
