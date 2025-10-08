@@ -19,10 +19,10 @@ export default function AdminPage() {
         <div className="w-10"></div>
       </header>
       <main className="flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-sm px-4">
+        <div className="w-full max-w-sm">
           <HologramEffect />
         </div>
-        <p className="text-muted-foreground mt-8 text-center p-4">
+        <p className="text-muted-foreground mt-8 text-center px-4">
           Continuous operation analysis. System integrity and performance metrics.
         </p>
       </main>
