@@ -13,7 +13,7 @@ export default function AdminPage() {
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft />
         </Button>
-        <h1 className="text-2xl font-jarvis text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-orange-500 to-purple-500">
+        <h1 className="text-2xl font-jarvis text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
           Admin Panel
         </h1>
         <div className="w-10"></div>

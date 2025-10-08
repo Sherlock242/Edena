@@ -13,15 +13,15 @@ export function HologramEffect() {
           <stop offset="50%" stopColor="#00ffff" stopOpacity="1" />
           <stop offset="100%" stopColor="#00ffff" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id={`grad-purple-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#8A2BE2" stopOpacity="0" />
-          <stop offset="50%" stopColor="#8A2BE2" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#8A2BE2" stopOpacity="0" />
+        <linearGradient id={`grad-blue1-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#0077ff" stopOpacity="0" />
+          <stop offset="50%" stopColor="#0077ff" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#0077ff" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id={`grad-orange-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-           <stop offset="0%" stopColor="orange" stopOpacity="0" />
-           <stop offset="50%" stopColor="orange" stopOpacity="0.7" />
-           <stop offset="100%" stopColor="orange" stopOpacity="0" />
+        <linearGradient id={`grad-blue2-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+           <stop offset="0%" stopColor="#40E0D0" stopOpacity="0" />
+           <stop offset="50%" stopColor="#40E0D0" stopOpacity="0.7" />
+           <stop offset="100%" stopColor="#40E0D0" stopOpacity="0" />
         </linearGradient>
         <filter id={`glow-${id}`} x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
@@ -36,14 +36,14 @@ export function HologramEffect() {
       <path
         d={pathData}
         fill="none"
-        stroke="rgba(0, 255, 255, 0.1)"
+        stroke="rgba(0, 119, 255, 0.1)"
         strokeWidth="15"
         transform="rotate(20 50 50) scale(1 0.5)"
       />
        <path
         d={pathData}
         fill="none"
-        stroke="rgba(0, 255, 255, 0.15)"
+        stroke="rgba(0, 119, 255, 0.15)"
         strokeWidth="0.5"
         strokeDasharray="2 4"
         transform="rotate(20 50 50) scale(1 0.5)"
@@ -64,11 +64,11 @@ export function HologramEffect() {
           <animate attributeName="stroke-dashoffset" from="250" to="-250" dur="4s" repeatCount="indefinite" />
         </path>
 
-        {/* Slower purple trail */}
+        {/* Slower blue trail */}
          <path
           d={pathData}
           fill="none"
-          stroke={`url(#grad-purple-${id})`}
+          stroke={`url(#grad-blue1-${id})`}
           strokeWidth="1"
           strokeLinecap="round"
           strokeDasharray="10 20"
@@ -77,11 +77,11 @@ export function HologramEffect() {
           <animate attributeName="stroke-dashoffset" from="0" to="30" dur="6s" repeatCount="indefinite" />
         </path>
 
-         {/* Orange accent line */}
+         {/* Light blue accent line */}
          <path
           d={pathData}
           fill="none"
-          stroke={`url(#grad-orange-${id})`}
+          stroke={`url(#grad-blue2-${id})`}
           strokeWidth="0.8"
           strokeLinecap="round"
           strokeDasharray="1 30"
