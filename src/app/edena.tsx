@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Search, Image as ImageIcon, Video, VideoOff, SwitchCamera } from 'lucide-react';
+import { Menu, Search, Image as ImageIcon, Video, VideoOff, SwitchCamera, Shield } from 'lucide-react';
 import { performSearch } from '@/ai/flows/search';
 import { generateImage } from '@/ai/flows/generate-image';
 import { analyzeImage } from '@/ai/flows/analyze-image';
@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/sheet";
 import { WebsiteViewer } from '@/components/website-viewer';
 import Draggable from 'react-draggable';
+import { useRouter } from 'next/navigation';
+
 
 type AppMode = 'search' | 'image' | 'vision';
 type FacingMode = 'user' | 'environment';
@@ -75,6 +77,8 @@ const AIConsciousnessPage = () => {
   const [showVideo, setShowVideo] = useState(false);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<FacingMode>('user');
+  const router = useRouter();
+
 
   const searchFormRef = useRef<HTMLFormElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
@@ -186,10 +190,14 @@ const AIConsciousnessPage = () => {
     const source = sourceMatch ? sourceMatch[1] : '';
     let textToSpeak = text.replace(/^\([\w+]+\)\s*/, '');
     
-    // Simple check for Hindi characters
-    const isHindi = /[\u0900-\u097F]/.test(textToSpeak);
+    // Heuristic to detect if the text is likely Hindi/Hinglish
+    const hindiKeywords = ['hai', 'kya', 'kaise', 'mein', 'mera', 'tum', 'aap', 'sir', 'kar', 'diya'];
+    const wordCount = textToSpeak.split(/\s+/).length;
+    const hindiWordCount = textToSpeak.toLowerCase().split(/\s+/).filter(word => hindiKeywords.includes(word.replace(/[.?,!]/g, ''))).length;
+    const isLikelyHindi = (hindiWordCount / wordCount) > 0.3 || /[\u0900-\u097F]/.test(textToSpeak);
 
-    if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir') && source !== 'Img' && !blushingMode && !isHindi) {
+
+    if (source && source !== 'G' && !angryMode && !textToSpeak.toLowerCase().startsWith('sir') && source !== 'Img' && !blushingMode && !isLikelyHindi) {
       textToSpeak = `Sir, ${textToSpeak}`;
     }
 
@@ -197,7 +205,7 @@ const AIConsciousnessPage = () => {
     setAiResponseSource(source);
 
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    if (isHindi) {
+    if (isLikelyHindi) {
         utterance.lang = 'hi-IN';
     }
     
@@ -305,17 +313,19 @@ const AIConsciousnessPage = () => {
     
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
-    recognition.lang = 'en-US';
+    recognition.lang = 'en-IN'; // Start with Indian English for better mixed-language support
     recognition.interimResults = false;
 
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
       
       // Basic language detection to switch recognition language
-      if (/[\u0900-\u097F]/.test(transcript)) {
+      const hindiKeywords = ['hai', 'kya', 'kaise', 'mein', 'mera', 'tum', 'aap'];
+      const isLikelyHindi = hindiKeywords.some(kw => transcript.toLowerCase().includes(kw)) || /[\u0900-\u097F]/.test(transcript);
+      if (isLikelyHindi) {
         recognition.lang = 'hi-IN';
       } else {
-        recognition.lang = 'en-US';
+        recognition.lang = 'en-IN';
       }
         
       if (websiteUrl) {
@@ -345,9 +355,8 @@ const AIConsciousnessPage = () => {
     if (recognitionRef.current) {
         setIsListening(true);
         if (!websiteUrl) { resetState(false); }
-        // Try to guess language from current search text to set initial recognition lang
         const isHindi = /[\u0900-\u097F]/.test(searchText);
-        recognitionRef.current.lang = isHindi ? 'hi-IN' : 'en-US';
+        recognitionRef.current.lang = isHindi ? 'hi-IN' : 'en-IN';
         recognitionRef.current.start();
     } else { speak("(G) Sir, I'm sorry, my voice recognition isn't available on this browser."); }
   };
@@ -402,13 +411,19 @@ const AIConsciousnessPage = () => {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
         setShowVideo(false);
-        // Try the other facing mode as a fallback
-        if ((error as Error).name === 'OverconstrainedError' && mode === 'environment') {
-            speak("(G) Sir, I was unable to access the back camera. Switching to the front camera.");
-            setFacingMode('user');
-            getCameraPermission('user');
-        } else {
+        
+        if ((error as Error).name === 'OverconstrainedError' || (error as Error).name === 'NotFoundError') {
+            if (mode === 'environment') {
+                speak("(G) Sir, I was unable to access the back camera. Switching to the front camera.");
+                setFacingMode('user');
+                getCameraPermission('user');
+            } else {
+                 speak("(G) Sir, it seems a camera is unavailable or not found.");
+            }
+        } else if ((error as Error).name === 'NotAllowedError') {
             speak("(G) Sir, camera access was denied. Please enable it in your browser settings to use Vision Mode.");
+        } else {
+             speak("(G) Sir, I've encountered an unexpected error with the camera system.");
         }
     }
   }, [speak, stopVideoStream]);
@@ -462,6 +477,11 @@ const AIConsciousnessPage = () => {
   
   const handleModeChange = (mode: AppMode) => {
     if (appMode !== mode) { setAppMode(mode); resetState(false); }
+    setIsSheetOpen(false);
+  };
+  
+  const handleNavigation = (path: string) => {
+    router.push(path);
     setIsSheetOpen(false);
   };
 
@@ -543,22 +563,6 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
                       <EdengramLogo mode={appMode} onClick={(e) => { e.stopPropagation(); setShowSearch(true); }}/>
                       
                       <div className="flex items-center gap-2">
-                        <AnimatePresence>
-                          {appMode === 'vision' && (
-                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex gap-2">
-                              {hasCameraPermission === null && (
-                                <Button onClick={() => getCameraPermission(facingMode)} style={{ background: orbGradient, color: 'white' }} size="sm"><Video className="mr-2 h-4 w-4" />Enable</Button>
-                              )}
-                              {hasCameraPermission && (
-                                  <>
-                                      <Button onClick={handleCameraToggle} style={{ background: orbGradient, color: 'white' }} size="sm"><Video className="mr-2 h-4 w-4" />{showVideo ? 'Hide' : 'Show'}</Button>
-                                      <Button onClick={handleSwitchCamera} style={{ background: orbGradient, color: 'white' }} size="sm"><SwitchCamera className="mr-2 h-4 w-4" />Switch</Button>
-                                  </>
-                              )}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-
                         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                           <SheetTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-10 w-10 text-cyan-400 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-transparent">
@@ -576,6 +580,10 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
                                   </Button>
                                   <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('vision')}>
                                       <Video className="mr-6 h-10 w-10" /><span>Vision</span>
+                                  </Button>
+                                  <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleNavigation('/admin')}>
+                                    <Shield className="mr-6 h-10 w-10" />
+                                    <span>Admin</span>
                                   </Button>
                               </div>
                           </SheetContent>
@@ -597,43 +605,66 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
           </div>
         )}
 
-        <div className="flex-1 flex flex-col items-center justify-center min-h-0 pt-20">
-          <motion.div layout transition={{ type: 'spring', stiffness: 300, damping: 30 }} ref={orbRef} className="relative flex items-center justify-center w-[40vw] h-[40vw] md:w-[25vw] md:h-[25vw] max-w-[300px] max-h-[300px] min-w-[240px] min-h-[240px] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleListen(); }}>
+        <div className="flex-1 flex flex-col items-center justify-center min-h-0 pt-16">
+            {appMode === 'vision' && (
               <AnimatePresence>
-                {isClient && particles.map((p) => (<motion.div key={`particle-${p.id}`} className={`absolute ${particleColor} rounded-full`} style={{ width: `${p.width}px`, height: `${p.height}px`, top: '50%', left: '50%', }} initial={{ x: p.x, y: p.y, scale: 0, }} animate={{ scale: [0, 1, 0] }} transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}/>))}
-              </AnimatePresence>
-              <motion.svg className="absolute w-[50%] h-[50%]" viewBox="0 0 300 300" initial={{rotate: 20}} animate={{ rotate: 380 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}><motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring1Color} strokeWidth="3" strokeDasharray="68.4 20" transition={{duration: 0.3}} /></motion.svg>
-              <motion.svg className="absolute w-[65%] h-[65%]" viewBox="0 0 300 300" initial={{rotate: -50}} animate={{ rotate: -410 }} transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}><motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring2Color} strokeWidth="4" strokeDasharray="150 40 80 110" transition={{duration: 0.3}} /></motion.svg>
-              <motion.svg className="absolute w-full h-full" viewBox="0 0 300 300" initial={{rotate: 90}} animate={{ rotate: 450 }} transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}><motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring3Color} strokeWidth="5" strokeDasharray="100 80 50 120 130" transition={{duration: 0.3}} /></motion.svg>
-              <motion.div className="absolute w-[30%] h-[30%]" style={{ background: orbGradient, borderRadius: '50%' }} animate={{ scale: isListening || isSpeaking ? 1.1 : 1, boxShadow: orbBoxShadow, }} transition={{ type: 'spring', stiffness: 300, damping: 15, duration: 0.3 }}/>
-          </motion.div>
-
-          <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full max-w-2xl px-4">
-              <AnimatePresence mode="wait">
-                  <motion.div key={isLoading ? 'loader' : (aiResponse + aiResponseSource + generatedImageUrl)} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="w-full flex flex-col items-center">
-                      {isLoading ? (<p className="text-lg" style={{ color: interactiveIconColor }}>{appMode === 'image' ? 'Generating' : appMode === 'vision' ? 'Analyzing' : 'Thinking'}{dots}</p>) 
-                      : isListening ? (<p className="text-lg" style={{ color: interactiveIconColor }}>Listening{dots}</p>) 
-                      : (
-                        <>
-                          {generatedImageUrl && (
-                            <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[200px] h-[200px]" style={{ borderColor: 'orangered' }}>
-                              <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-cover" />
-                              <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center"><p className="text-white text-xs font-mono">Edena.AI</p></div>
-                            </div>
-                          )}
-                          {aiResponse ? (
-                              <ScrollArea className="h-auto max-h-48 w-full max-w-xl rounded-md p-4">
-                                {aiResponseSource && !['Img', 'Vis'].includes(aiResponseSource) && (<p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>)}
-                                <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{isBlushing && '😊 '}{aiResponse}</p>
-                              </ScrollArea>
-                          ) : !generatedImageUrl ? (
-                            <p className="text-lg text-muted-foreground whitespace-nowrap">{websiteUrl ? 'Say "close" to exit viewer.' : appMode === 'vision' && hasCameraPermission ? 'Ask me anything about what I see.' : 'Click the orb to start a voice command.'}</p>
-                          ) : null}
-                        </>
+                  <motion.div 
+                      initial={{ opacity: 0, y: -20 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      exit={{ opacity: 0, y: -20 }} 
+                      className="flex gap-2 mb-4"
+                  >
+                      {hasCameraPermission === null && (
+                        <Button onClick={() => getCameraPermission(facingMode)} style={{ background: orbGradient, color: 'white' }} size="sm"><Video className="mr-2 h-4 w-4" />Enable Camera</Button>
+                      )}
+                      {hasCameraPermission && (
+                          <>
+                              <Button onClick={handleCameraToggle} style={{ background: orbGradient, color: 'white' }} size="sm"><Video className="mr-2 h-4 w-4" />{showVideo ? 'Hide Camera' : 'Show Camera'}</Button>
+                              <Button onClick={handleSwitchCamera} style={{ background: orbGradient, color: 'white' }} size="sm"><SwitchCamera className="mr-2 h-4 w-4" />Switch</Button>
+                          </>
                       )}
                   </motion.div>
               </AnimatePresence>
-          </div>
+            )}
+
+            <div className="flex-1 flex flex-col items-center justify-center w-full">
+                <motion.div layout transition={{ type: 'spring', stiffness: 300, damping: 30 }} ref={orbRef} className="relative flex items-center justify-center w-[40vw] h-[40vw] md:w-[25vw] md:h-[25vw] max-w-[300px] max-h-[300px] min-w-[240px] min-h-[240px] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleListen(); }}>
+                    <AnimatePresence>
+                      {isClient && particles.map((p) => (<motion.div key={`particle-${p.id}`} className={`absolute ${particleColor} rounded-full`} style={{ width: `${p.width}px`, height: `${p.height}px`, top: '50%', left: '50%', }} initial={{ x: p.x, y: p.y, scale: 0, }} animate={{ scale: [0, 1, 0] }} transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}/>))}
+                    </AnimatePresence>
+                    <motion.svg className="absolute w-[50%] h-[50%]" viewBox="0 0 300 300" initial={{rotate: 20}} animate={{ rotate: 380 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}><motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring1Color} strokeWidth="3" strokeDasharray="68.4 20" transition={{duration: 0.3}} /></motion.svg>
+                    <motion.svg className="absolute w-[65%] h-[65%]" viewBox="0 0 300 300" initial={{rotate: -50}} animate={{ rotate: -410 }} transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}><motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring2Color} strokeWidth="4" strokeDasharray="150 40 80 110" transition={{duration: 0.3}} /></motion.svg>
+                    <motion.svg className="absolute w-full h-full" viewBox="0 0 300 300" initial={{rotate: 90}} animate={{ rotate: 450 }} transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}><motion.circle cx="150" cy="150" r="140" fill="none" stroke={ring3Color} strokeWidth="5" strokeDasharray="100 80 50 120 130" transition={{duration: 0.3}} /></motion.svg>
+                    <motion.div className="absolute w-[30%] h-[30%]" style={{ background: orbGradient, borderRadius: '50%' }} animate={{ scale: isListening || isSpeaking ? 1.1 : 1, boxShadow: orbBoxShadow, }} transition={{ type: 'spring', stiffness: 300, damping: 15, duration: 0.3 }}/>
+                </motion.div>
+
+                <div className="text-center mt-8 min-h-[6rem] flex flex-col items-center justify-center w-full max-w-2xl px-4">
+                    <AnimatePresence mode="wait">
+                        <motion.div key={isLoading ? 'loader' : (aiResponse + aiResponseSource + generatedImageUrl)} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="w-full flex flex-col items-center">
+                            {isLoading ? (<p className="text-lg" style={{ color: interactiveIconColor }}>{appMode === 'image' ? 'Generating' : appMode === 'vision' ? 'Analyzing' : 'Thinking'}{dots}</p>) 
+                            : isListening ? (<p className="text-lg" style={{ color: interactiveIconColor }}>Listening{dots}</p>) 
+                            : (
+                              <>
+                                {generatedImageUrl && (
+                                  <div className="relative mb-4 rounded-lg overflow-hidden border-2 w-[200px] h-[200px]" style={{ borderColor: 'orangered' }}>
+                                    <Image src={generatedImageUrl} alt="Generated image" layout="fill" className="object-cover" />
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black py-1 px-2 text-center"><p className="text-white text-xs font-mono">Edena.AI</p></div>
+                                  </div>
+                                )}
+                                {aiResponse ? (
+                                    <ScrollArea className="h-auto max-h-48 w-full max-w-xl rounded-md p-4">
+                                      {aiResponseSource && !['Img', 'Vis'].includes(aiResponseSource) && (<p className="text-sm text-cyan-400/70 mb-2 font-mono text-center">[{aiResponseSource}]</p>)}
+                                      <p className="text-lg text-center whitespace-pre-wrap">{isAngry && '💢 '}{isBlushing && '😊 '}{aiResponse}</p>
+                                    </ScrollArea>
+                                ) : !generatedImageUrl ? (
+                                  <p className="text-lg text-muted-foreground whitespace-nowrap">{websiteUrl ? 'Say "close" to exit viewer.' : appMode === 'vision' && hasCameraPermission ? 'Ask me anything about what I see.' : 'Click the orb to start a voice command.'}</p>
+                                ) : null}
+                              </>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+            </div>
         </div>
       </div>
 
@@ -663,3 +694,5 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
 };
 
 export default AIConsciousnessPage;
+
+    
