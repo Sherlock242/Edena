@@ -13,7 +13,7 @@ export default function AdminPage() {
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft />
         </Button>
-        <h1 className="text-2xl font-jarvis text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-500">
+        <h1 className="text-2xl font-jarvis text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-orange-500 to-purple-500">
           Admin Panel
         </h1>
         <div className="w-10"></div>
@@ -23,7 +23,7 @@ export default function AdminPage() {
           <MobiusStrip />
         </div>
         <p className="text-muted-foreground mt-8 text-center">
-          Continuous operation analysis.
+          Continuous operation analysis. System integrity and performance metrics.
         </p>
       </main>
     </div>
