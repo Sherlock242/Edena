@@ -18,17 +18,19 @@ export default function AdminPage() {
         >
           <ArrowLeft />
         </Button>
-        <h1 className="text-2xl font-jarvis text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 whitespace-nowrap">
+        <h1 className="text-xl md:text-2xl font-jarvis text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 whitespace-nowrap">
           Admin Panel
         </h1>
       </header>
-      <main className="flex-1 flex flex-col items-start justify-center text-left pl-8 md:pl-16">
-        <div className="w-full max-w-sm">
-          <HologramEffect />
+      <main className="flex-1 flex flex-col items-center justify-center">
+        <div className="relative -translate-x-8">
+          <div className="w-full max-w-sm">
+            <HologramEffect />
+          </div>
+          <p className="text-muted-foreground mt-8 text-center max-w-sm">
+            Continuous operation analysis. System integrity and performance metrics.
+          </p>
         </div>
-        <p className="text-muted-foreground mt-8 text-left max-w-sm">
-          Continuous operation analysis. System integrity and performance metrics.
-        </p>
       </main>
     </div>
   );
