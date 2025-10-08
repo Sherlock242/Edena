@@ -8,7 +8,7 @@ export default function AdminPage() {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col h-screen bg-black text-white overflow-hidden">
+    <div className="flex flex-col h-screen w-screen bg-black text-white overflow-hidden">
       <header className="relative grid grid-cols-3 items-center w-full p-4 z-10">
         <div className="justify-self-start">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -21,7 +21,7 @@ export default function AdminPage() {
           </h1>
         </div>
       </header>
-      <main className="flex-1 flex flex-col items-center justify-center text-center -mt-16">
+      <main className="flex-1 flex flex-col items-center justify-center text-center">
         <div className="w-full max-w-sm">
           <HologramEffect />
         </div>
