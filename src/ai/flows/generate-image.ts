@@ -11,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import fetch from 'node-fetch';
+import FormData from 'form-data';
 
 const GenerateImageInputSchema = z.object({
   prompt: z.string().describe('The text prompt for image generation.'),
@@ -31,7 +32,7 @@ export async function generateImage(
 }
 
 // Function to try fetching from a given URL and return a data URI
-async function tryImageAPI(url: string, isBackup: boolean = false): Promise<string | null> {
+async function tryImageAPI(url: string): Promise<string | null> {
     try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -39,34 +40,57 @@ async function tryImageAPI(url: string, isBackup: boolean = false): Promise<stri
           return null;
         }
         
-        let imageBuffer, mimeType;
-        if (isBackup) {
-          // The backup API returns a JSON with the image data
-          const data: any = await response.json();
-          const imageUrl = data?.data?.[0]?.url;
-          if (!imageUrl) {
-            console.error("Backup API did not return a valid image URL.");
-            return null;
-          }
-          const imageResponse = await fetch(imageUrl);
-          if (!imageResponse.ok) {
-            console.error(`Backup image download failed with status: ${imageResponse.status}`);
-            return null;
-          }
-          imageBuffer = await imageResponse.buffer();
-          mimeType = imageResponse.headers.get('content-type') || 'image/png';
-        } else {
-          // The primary API returns the image directly
-          imageBuffer = await response.buffer();
-          mimeType = response.headers.get('content-type') || 'image/jpeg';
-        }
-
+        const imageBuffer = await response.buffer();
+        const mimeType = response.headers.get('content-type') || 'image/jpeg';
+        
         const base64Image = imageBuffer.toString('base64');
         return `data:${mimeType};base64,${base64Image}`;
     } catch (error) {
         console.error(`Error during API call to ${url}:`, error);
         return null;
     }
+}
+
+// Specific helper for DeepAI as it requires a POST request with an API key
+async function tryDeepAI(prompt: string): Promise<string | null> {
+  const apiKey = process.env.DEEPAI_API_KEY;
+  if (!apiKey || apiKey === 'your_api_key_here') {
+    console.warn("DeepAI API key is not set. Skipping this backup.");
+    return null;
+  }
+
+  try {
+    const form = new FormData();
+    form.append('text', prompt);
+
+    const response = await fetch('https://api.deepai.org/api/text2img', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        ...form.getHeaders()
+      },
+      body: form
+    });
+
+    if (!response.ok) {
+      console.error(`DeepAI API call failed with status: ${response.status}`);
+      return null;
+    }
+
+    const data: any = await response.json();
+    const imageUrl = data?.output_url;
+    if (!imageUrl) {
+      console.error("DeepAI API did not return a valid image URL.");
+      return null;
+    }
+
+    // DeepAI returns a URL, so we fetch that URL to get the image data
+    return await tryImageAPI(imageUrl);
+    
+  } catch (error) {
+    console.error(`Error during DeepAI API call:`, error);
+    return null;
+  }
 }
 
 
@@ -78,21 +102,21 @@ const generateImageFlow = ai.defineFlow(
   },
   async (input) => {
     // API 1: Primary (Pollinations.ai)
-    const primaryApiUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(input.prompt);
-    let imageUrl = await tryImageAPI(primaryApiUrl);
+    let imageUrl = await tryImageAPI('https://image.pollinations.ai/prompt/' + encodeURIComponent(input.prompt));
+    if (imageUrl) return { imageUrl };
+    console.warn("Primary image generation failed, trying backup API 1...");
 
-    // API 2: Backup (Canva)
-    if (!imageUrl) {
-        console.warn("Primary image generation failed, trying backup API...");
-        const backupApiUrl = `https://image.canva.com/v1/sticker-search?query=${encodeURIComponent(input.prompt)}&width=512&height=512&format=png`;
-        imageUrl = await tryImageAPI(backupApiUrl, true);
-    }
+    // API 2: Backup (Unsplash Source)
+    imageUrl = await tryImageAPI(`https://source.unsplash.com/512x512/?${encodeURIComponent(input.prompt)}`);
+    if (imageUrl) return { imageUrl };
+    console.warn("Backup API 1 failed, trying backup API 2 (DeepAI)...");
+
+    // API 3: Backup (DeepAI)
+    imageUrl = await tryDeepAI(input.prompt);
+    if (imageUrl) return { imageUrl };
+    console.warn("Backup API 2 (DeepAI) failed. All backups exhausted.");
     
-    if (imageUrl) {
-      return { imageUrl };
-    }
-
-    // If both fail, throw an error
+    // If all fail, throw an error
     throw new Error('Failed to generate image from all available public APIs.');
   }
 );
