@@ -226,33 +226,32 @@ const performSearchFlow = ai.defineFlow(
       if (output && isValidSearchResult(output.response)) {
         return { response: `(AI+API) ${output.response}` };
       }
+      // If the AI prompt returns an invalid response, we'll fall through to the backup race.
       throw new Error("Primary AI prompt failed to produce a valid output.");
     } catch(e) {
         console.error("Primary search flow failed, attempting fallback search race.", e);
-        // Fallback: Race DDG as a safety net.
+        
+        // FINAL FALLBACK: Race DDG search against the main AI prompt again as a safety net.
         try {
-            const ddgResult = await ddgSearchTool(input);
-            if (isValidSearchResult(ddgResult)) {
-                return { response: `(Dgg) ${ddgResult}` };
-            }
-            throw new Error("Fallback DDG search was inconclusive.");
+            const raceWinner = await Promise.any([
+                (async () => {
+                    const ddgResult = await ddgSearchTool(input);
+                    if (isValidSearchResult(ddgResult)) return `(Dgg) ${ddgResult}`;
+                    throw new Error("Fallback DDG search was inconclusive.");
+                })(),
+                (async () => {
+                    const { output } = await prompt({ query: "Search for: " + input.query });
+                    if (output && isValidSearchResult(output.response)) return `(AI+API) ${output.response}`;
+                    throw new Error("Fallback AI prompt was inconclusive.");
+                })(),
+            ]);
+
+            return { response: raceWinner };
+
         } catch (fallbackError) {
-             // Final Fallback: Force the AI to use another tool.
-            console.error("Fallback search race also failed, attempting final tool-based search.", fallbackError);
-            try {
-                const finalAttemptInput = { query: "Search with a tool: " + input.query };
-                const { output } = await prompt(finalAttemptInput);
-                 if (output && isValidSearchResult(output.response)) {
-                    return { response: `(AI+API) ${output.response}` };
-                }
-                throw new Error("Final tool-based search attempt failed to produce an output.");
-            } catch (finalError) {
-                console.error("All search methods failed.", finalError);
-                return { response: "(System) I'm sorry, but I'm having trouble connecting to all of my information sources right now. Please try again in a moment." };
-            }
+            console.error("All search methods, including fallbacks, have failed.", fallbackError);
+            return { response: "(System) I'm sorry, but I'm having trouble connecting to all of my information sources right now. Please try again in a moment." };
         }
     }
   }
 );
-
-    
