@@ -69,6 +69,7 @@ const cloneVoiceFlow = ai.defineFlow(
     
     // Stage 2: Analyze the transcribed text to create a vocal profile.
     const { text: vocalProfile } = await ai.generate({
+        model: 'googleai/gemini-1.5-flash',
         prompt: `Analyze the following text transcription to create a vocal profile. Describe the likely tone, pace, and style of the speaker. Be descriptive and creative.
         Transcription: "${transcribedText}"
         Vocal Profile:`,
