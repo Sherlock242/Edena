@@ -28,19 +28,20 @@ export default function VoiceCloningPage() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [dots, setDots] = useState('');
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [userAudioDataUri, setUserAudioDataUri] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
-  const handleGenerateClick = useCallback(async (audioDataUri?: string) => {
+  const handleGenerateClick = useCallback(async () => {
     if (!textToSpeak) {
       toast({ variant: 'destructive', title: 'No text provided', description: 'Please enter the text you want the AI to speak.' });
       return;
     }
-    if (!audioDataUri && !selectedVoice) {
-      toast({ variant: 'destructive', title: 'No voice source', description: 'Please record an audio sample, upload a file, or select a pre-built voice.' });
+    if (!userAudioDataUri && !selectedVoice) {
+      toast({ variant: 'destructive', title: 'No voice source', description: 'Please record, upload, or select a pre-built voice.' });
       return;
     }
 
@@ -49,7 +50,7 @@ export default function VoiceCloningPage() {
 
     try {
       const result = await cloneVoice({
-        audioDataUri: audioDataUri,
+        audioDataUri: userAudioDataUri ?? undefined,
         text: textToSpeak,
         voiceName: selectedVoice ?? undefined,
       });
@@ -64,7 +65,23 @@ export default function VoiceCloningPage() {
       toast({ variant: 'destructive', title: 'AI Error', description: (error as Error).message || 'An unknown AI error occurred.' });
       setRecordingState('idle');
     }
-  }, [textToSpeak, selectedVoice, toast]);
+  }, [textToSpeak, selectedVoice, userAudioDataUri, toast]);
+
+  const processAndSetAudio = (audioBlob: Blob) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = async () => {
+      const base64Audio = reader.result as string;
+      setUserAudioDataUri(base64Audio);
+      toast({ title: 'Audio Sample Ready', description: 'Your voice sample has been loaded and is ready for generation.' });
+      setRecordingState('idle');
+    };
+     reader.onerror = () => {
+        console.error("Error reading audio data");
+        toast({ variant: 'destructive', title: 'Audio Read Error', description: 'There was an issue processing your audio.' });
+        setRecordingState('idle');
+    }
+  }
 
   const handleStartRecording = async () => {
     if (recordingState === 'recording') {
@@ -76,8 +93,6 @@ export default function VoiceCloningPage() {
       toast({ variant: 'destructive', title: 'Media Not Supported', description: 'Your browser does not support microphone recording.' });
       return;
     }
-    
-    setSelectedVoice(null); // Clear pre-built voice selection when recording
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -87,18 +102,14 @@ export default function VoiceCloningPage() {
       mediaRecorderRef.current.ondataavailable = (event) => { audioChunksRef.current.push(event.data); };
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          const base64Audio = reader.result as string;
-          handleGenerateClick(base64Audio);
-        };
+        processAndSetAudio(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorderRef.current.start();
       setRecordingState('recording');
       setGeneratedAudio(null);
+      setUserAudioDataUri(null);
 
     } catch (err) {
       console.error('Error accessing microphone:', err);
@@ -113,23 +124,21 @@ export default function VoiceCloningPage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
-    setSelectedVoice(null);
 
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onloadend = () => {
-        const base64Audio = reader.result as string;
-        handleGenerateClick(base64Audio);
-    };
-    reader.onerror = () => {
-        console.error("Error reading file");
-        toast({ variant: 'destructive', title: 'File Read Error', description: 'There was an issue reading your selected audio file.' });
-    }
+    setUserAudioDataUri(null);
+    setRecordingState('processing');
+    processAndSetAudio(file);
+    event.target.value = ''; // Reset file input
   }
 
   const handleOrbClick = () => {
-    if (selectedVoice) {
+    if (recordingState === 'recording') {
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+    if (recordingState === 'processing') return;
+
+    if (userAudioDataUri || selectedVoice) {
       handleGenerateClick();
     } else {
       handleStartRecording();
@@ -144,7 +153,7 @@ export default function VoiceCloningPage() {
   const orbState = recordingState === 'recording' || recordingState === 'processing';
   const orbGradient = orbState ? 'linear-gradient(to bottom right, #FF0000, #B22222)' : 'linear-gradient(to bottom right, #8A2BE2, #4B0082)';
   const orbBoxShadow = orbState ? '0 0 40px #FF0000, 0 0 20px #B22222' : '0 0 30px #8A2BE2, 0 0 15px #4B0082';
-  const hasSelection = !!selectedVoice;
+  const canGenerate = !!userAudioDataUri || !!selectedVoice;
 
   return (
     <div className="flex flex-col h-screen bg-black text-white font-body overflow-hidden">
@@ -182,11 +191,11 @@ export default function VoiceCloningPage() {
                 <motion.div 
                     className="absolute w-[40%] h-[40%] rounded-full flex items-center justify-center" 
                     style={{ background: orbGradient, boxShadow: orbBoxShadow }} 
-                    animate={{ scale: orbState || hasSelection ? 1.1 : 1 }} 
+                    animate={{ scale: orbState || canGenerate ? 1.1 : 1 }} 
                     transition={{ type: 'spring', stiffness: 300, damping: 15 }}
                 >
-                    {recordingState === 'idle' && !hasSelection && <Mic className="w-12 h-12 text-white/80" />}
-                    {recordingState === 'idle' && hasSelection && <Sparkles className="w-12 h-12 text-white/80" />}
+                    {!canGenerate && recordingState === 'idle' && <Mic className="w-12 h-12 text-white/80" />}
+                    {canGenerate && recordingState === 'idle' && <Sparkles className="w-12 h-12 text-white/80" />}
                     {recordingState === 'recording' && <MicOff className="w-12 h-12 text-white/80" />}
                     {recordingState === 'processing' && <Loader2 className="w-12 h-12 text-white/80 animate-spin" />}
                     {recordingState === 'finished' && <Play className="w-12 h-12 text-white/80" />}
@@ -195,18 +204,18 @@ export default function VoiceCloningPage() {
 
             <AnimatePresence mode="wait">
                 <motion.div
-                    key={recordingState + (selectedVoice || '')}
+                    key={recordingState}
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                     className="min-h-[4rem] flex flex-col items-center justify-center"
                 >
-                    {recordingState === 'idle' && !selectedVoice && <p className="text-lg text-muted-foreground">Click orb to record or upload an audio file.</p>}
-                    {recordingState === 'idle' && selectedVoice && <p className="text-lg text-muted-foreground">Click orb to generate with "{selectedVoice}".</p>}
+                    {recordingState === 'idle' && !canGenerate && <p className="text-lg text-muted-foreground">Click orb to record a voice sample.</p>}
+                    {recordingState === 'idle' && canGenerate && <p className="text-lg text-muted-foreground">Ready to generate. Click the orb.</p>}
                     {recordingState === 'recording' && <p className="text-lg text-red-400">Recording{dots}</p>}
                     {recordingState === 'processing' && <p className="text-lg text-purple-400">Analyzing & Synthesizing{dots}</p>}
                     {recordingState === 'finished' && (
                         <div className="text-center">
                             <p className="text-lg text-green-400">Synthesis Complete!</p>
-                            <p className="text-sm text-muted-foreground mt-1">Click orb to generate again or record new sample.</p>
+                            <p className="text-sm text-muted-foreground mt-1">Click orb to generate again or provide a new sample.</p>
                         </div>
                     )}
                 </motion.div>
@@ -215,15 +224,16 @@ export default function VoiceCloningPage() {
             <div className="w-full grid gap-6 mt-8">
                 <Card className="bg-card/50 border-purple-500/30">
                     <CardHeader>
-                    <CardTitle className="flex items-center"><AudioLines className="mr-2 h-5 w-5 text-purple-400"/>1. Choose Voice Source</CardTitle>
-                    <CardDescription>Select a pre-built voice, record a sample, or upload an audio file.</CardDescription>
+                    <CardTitle className="flex items-center"><AudioLines className="mr-2 h-5 w-5 text-purple-400"/>1. Choose Voice Source(s)</CardTitle>
+                    <CardDescription>You can use a pre-built voice, provide your own sample, or combine both.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
-                        <Select onValueChange={(value) => { setSelectedVoice(value); setRecordingState('idle'); }} value={selectedVoice || ''}>
+                        <Select onValueChange={(value) => setSelectedVoice(value === 'none' ? null : value)} defaultValue='none'>
                             <SelectTrigger className="w-full bg-background/50 text-base" disabled={recordingState === 'recording' || recordingState === 'processing'}>
-                                <SelectValue placeholder="Select a pre-built voice..." />
+                                <SelectValue placeholder="Select a pre-built target voice... (optional)" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="none">None (Clone from sample only)</SelectItem>
                                 <SelectGroup>
                                     <SelectLabel>Female</SelectLabel>
                                     {PREBUILT_VOICES.Female.map(voice => <SelectItem key={voice} value={voice}>{voice}</SelectItem>)}
@@ -236,15 +246,15 @@ export default function VoiceCloningPage() {
                         </Select>
                          <div className="flex items-center text-sm text-muted-foreground">
                             <div className="flex-grow border-t border-muted-foreground/30"></div>
-                            <div className="mx-4 flex-shrink-0">OR</div>
+                            <div className="mx-4 flex-shrink-0">AND / OR</div>
                             <div className="flex-grow border-t border-muted-foreground/30"></div>
                         </div>
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                          <Button className="w-full" variant="outline" onClick={handleOrbClick} disabled={recordingState === 'processing' || !!selectedVoice}>
+                          <Button className="w-full" variant="outline" onClick={handleStartRecording} disabled={recordingState === 'processing'}>
                               {recordingState === 'recording' ? <MicOff className="mr-2"/> : <Mic className="mr-2"/>}
                               {recordingState === 'recording' ? 'Stop Recording' : 'Record Voice Sample'}
                           </Button>
-                          <Button className="w-full" variant="outline" onClick={handleUploadClick} disabled={recordingState !== 'idle' || !!selectedVoice}>
+                          <Button className="w-full" variant="outline" onClick={handleUploadClick} disabled={recordingState !== 'idle'}>
                               <Upload className="mr-2"/>
                               Upload Audio File
                           </Button>
@@ -255,7 +265,7 @@ export default function VoiceCloningPage() {
                 <Card className="bg-card/50 border-purple-500/30">
                     <CardHeader>
                     <CardTitle className="flex items-center"><Sparkles className="mr-2 h-5 w-5 text-purple-400"/>2. Enter Text & Generate</CardTitle>
-                    <CardDescription>Provide the text to synthesize with the chosen voice.</CardDescription>
+                    <CardDescription>Provide the text to synthesize with the chosen voice configuration.</CardDescription>
                     </CardHeader>
                     <CardContent>
                     <Textarea

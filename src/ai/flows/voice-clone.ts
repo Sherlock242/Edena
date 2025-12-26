@@ -16,7 +16,7 @@ import wav from 'wav';
 const CloneVoiceInputSchema = z.object({
   audioDataUri: z.string().describe("The audio sample of the voice to be cloned, as a data URI.").optional(),
   text: z.string().describe('The text to be spoken in the cloned voice.'),
-  voiceName: z.string().describe('An optional pre-defined voice to use instead of cloning.').optional(),
+  voiceName: z.string().describe('An optional pre-defined voice to use as a target profile.').optional(),
 });
 export type CloneVoiceInput = z.infer<typeof CloneVoiceInputSchema>;
 
@@ -56,30 +56,15 @@ const cloneVoiceFlow = ai.defineFlow(
   },
   async (input) => {
     let media;
-    
-    if (input.voiceName) {
-        // Stage 2 (Direct): Synthesize with a pre-built voice
-        const ttsResponse = await ai.generate({
-            model: 'googleai/gemini-2.5-flash-preview-tts',
-            prompt: input.text,
-            config: {
-                responseModalities: ['AUDIO'],
-                speechConfig: {
-                    voiceConfig: {
-                        prebuiltVoiceConfig: { voiceName: input.voiceName },
-                    },
-                },
-            },
-        });
-        media = ttsResponse.media;
+    let ttsPrompt = `Text to speak: "${input.text}"`;
 
-    } else if (input.audioDataUri) {
-        // Stage 1: Analyze the audio to create a vocal profile.
+    if (input.audioDataUri) {
+        // Stage 1: Analyze the user's audio to create a vocal profile.
         const { text: vocalProfile } = await ai.generate({
             model: 'googleai/gemini-2.5-flash',
             prompt: [
                 { media: { url: input.audioDataUri } },
-                { text: `Analyze the provided audio. Do NOT transcribe the words. Instead, describe the speaker's vocal characteristics. Consider their pitch, pace, tone, and any notable style. Output a "Vocal Profile".` }
+                { text: `Analyze the provided audio. Do NOT transcribe the words. Instead, describe the speaker's vocal characteristics in a "Vocal Profile".` }
             ],
             config: { temperature: 0.3 },
         });
@@ -88,19 +73,30 @@ const cloneVoiceFlow = ai.defineFlow(
             throw new Error("Could not analyze the provided audio sample to create a vocal profile.");
         }
         
-        // Stage 2: Synthesize the new text using the generated vocal profile as guidance.
-        const ttsResponse = await ai.generate({
-            model: 'googleai/gemini-2.5-flash-preview-tts',
-            prompt: `Text to speak: "${input.text}"\n\nVocal Profile Instructions: Generate the speech in a voice that matches the following profile: ${vocalProfile}`,
-            config: {
-                responseModalities: ['AUDIO'],
-            },
-        });
-        media = ttsResponse.media;
-    } else {
-        throw new Error("Either an audio sample (audioDataUri) or a pre-defined voice (voiceName) must be provided.");
+        if (input.voiceName) {
+            // If both sample and pre-built voice are present, use the pre-built as a target for the sample.
+            ttsPrompt += `\n\nINSTRUCTIONS: Synthesize the speech using the vocal characteristics from the following profile as a base, but steer the voice to match the style of the pre-built voice known as "${input.voiceName}".\n\n${vocalProfile}`;
+        } else {
+            // If only a sample is present, clone it directly.
+            ttsPrompt += `\n\nINSTRUCTIONS: Generate the speech in a voice that faithfully replicates the following vocal profile:\n${vocalProfile}`;
+        }
     }
 
+    // Stage 2: Synthesize the new text using the constructed prompt and potentially a specified pre-built voice.
+    const ttsResponse = await ai.generate({
+        model: 'googleai/gemini-2.5-flash-preview-tts',
+        prompt: ttsPrompt,
+        config: {
+            responseModalities: ['AUDIO'],
+            // If a voiceName is provided (with or without a sample), it guides the synthesis.
+            speechConfig: input.voiceName ? {
+                voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: input.voiceName },
+                },
+            } : undefined,
+        },
+    });
+    media = ttsResponse.media;
 
     if (!media) {
       throw new Error("The AI model did not return any audio media.");
