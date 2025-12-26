@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Play, Loader2, ArrowLeft, Waves, Sparkles, AudioLines } from 'lucide-react';
+import { Mic, MicOff, Play, Loader2, ArrowLeft, Waves, Sparkles, AudioLines, Upload } from 'lucide-react';
 import { cloneVoice } from '@/ai/flows/voice-clone';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -15,10 +15,10 @@ type RecordingState = 'idle' | 'recording' | 'processing' | 'finished';
 
 const PREBUILT_VOICES = {
     'Male': [
-        'Arcturus', 'Canopus', 'Spica', 'Hadar', 'Rigel',
+        'Arcturus', 'Canopus', 'Spica', 'Hadar', 'Rigel', 'Shaula', 'Pollux', 'Acrux'
     ],
     'Female': [
-        'Achernar', 'Algenib', 'Antares', 'Capella', 'Deneb', 'Mirfak', 'Sirius', 'Vega',
+        'Achernar', 'Algenib', 'Antares', 'Capella', 'Deneb', 'Mirfak', 'Sirius', 'Vega', 'Electra', 'Maia', 'Taygeta'
     ]
 }
 
@@ -31,6 +31,7 @@ export default function VoiceCloningPage() {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   const handleGenerateClick = useCallback(async (audioDataUri?: string) => {
@@ -39,7 +40,7 @@ export default function VoiceCloningPage() {
       return;
     }
     if (!audioDataUri && !selectedVoice) {
-      toast({ variant: 'destructive', title: 'No voice source', description: 'Please record an audio sample or select a pre-built voice.' });
+      toast({ variant: 'destructive', title: 'No voice source', description: 'Please record an audio sample, upload a file, or select a pre-built voice.' });
       return;
     }
 
@@ -104,6 +105,28 @@ export default function VoiceCloningPage() {
       toast({ variant: 'destructive', title: 'Microphone Access Denied', description: 'Please enable microphone permissions in your browser settings.' });
     }
   };
+  
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setSelectedVoice(null);
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+        const base64Audio = reader.result as string;
+        handleGenerateClick(base64Audio);
+    };
+    reader.onerror = () => {
+        console.error("Error reading file");
+        toast({ variant: 'destructive', title: 'File Read Error', description: 'There was an issue reading your selected audio file.' });
+    }
+  }
 
   const handleOrbClick = () => {
     if (selectedVoice) {
@@ -176,7 +199,7 @@ export default function VoiceCloningPage() {
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                     className="min-h-[4rem] flex flex-col items-center justify-center"
                 >
-                    {recordingState === 'idle' && !selectedVoice && <p className="text-lg text-muted-foreground">Click orb to record voice sample.</p>}
+                    {recordingState === 'idle' && !selectedVoice && <p className="text-lg text-muted-foreground">Click orb to record or upload an audio file.</p>}
                     {recordingState === 'idle' && selectedVoice && <p className="text-lg text-muted-foreground">Click orb to generate with "{selectedVoice}".</p>}
                     {recordingState === 'recording' && <p className="text-lg text-red-400">Recording{dots}</p>}
                     {recordingState === 'processing' && <p className="text-lg text-purple-400">Analyzing & Synthesizing{dots}</p>}
@@ -193,9 +216,9 @@ export default function VoiceCloningPage() {
                 <Card className="bg-card/50 border-purple-500/30">
                     <CardHeader>
                     <CardTitle className="flex items-center"><AudioLines className="mr-2 h-5 w-5 text-purple-400"/>1. Choose Voice Source</CardTitle>
-                    <CardDescription>Record a voice sample OR select a pre-built AI voice.</CardDescription>
+                    <CardDescription>Select a pre-built voice, record a sample, or upload an audio file.</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="grid gap-4">
                         <Select onValueChange={(value) => { setSelectedVoice(value); setRecordingState('idle'); }} value={selectedVoice || ''}>
                             <SelectTrigger className="w-full bg-background/50 text-base" disabled={recordingState === 'recording' || recordingState === 'processing'}>
                                 <SelectValue placeholder="Select a pre-built voice..." />
@@ -211,15 +234,22 @@ export default function VoiceCloningPage() {
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
-                         <div className="my-4 flex items-center text-sm text-muted-foreground">
+                         <div className="flex items-center text-sm text-muted-foreground">
                             <div className="flex-grow border-t border-muted-foreground/30"></div>
                             <div className="mx-4 flex-shrink-0">OR</div>
                             <div className="flex-grow border-t border-muted-foreground/30"></div>
                         </div>
-                        <Button className="w-full" variant="outline" onClick={handleOrbClick} disabled={recordingState === 'processing' || !!selectedVoice}>
-                            {recordingState === 'recording' ? <MicOff className="mr-2"/> : <Mic className="mr-2"/>}
-                            {recordingState === 'recording' ? 'Stop Recording' : 'Add a Voice Sample'}
-                        </Button>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                          <Button className="w-full" variant="outline" onClick={handleOrbClick} disabled={recordingState === 'processing' || !!selectedVoice}>
+                              {recordingState === 'recording' ? <MicOff className="mr-2"/> : <Mic className="mr-2"/>}
+                              {recordingState === 'recording' ? 'Stop Recording' : 'Record Voice Sample'}
+                          </Button>
+                          <Button className="w-full" variant="outline" onClick={handleUploadClick} disabled={recordingState !== 'idle' || !!selectedVoice}>
+                              <Upload className="mr-2"/>
+                              Upload Audio File
+                          </Button>
+                          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="audio/*" className="hidden" />
+                        </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-card/50 border-purple-500/30">
