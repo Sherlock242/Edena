@@ -22,6 +22,7 @@ export type CloneVoiceInput = z.infer<typeof CloneVoiceInputSchema>;
 
 const CloneVoiceOutputSchema = z.object({
   audioUrl: z.string().describe('The data URI of the generated audio.'),
+  transcribedText: z.string().optional().describe('The text transcribed from the audio sample.'),
 });
 export type CloneVoiceOutput = z.infer<typeof CloneVoiceOutputSchema>;
 
@@ -67,13 +68,12 @@ const cloneVoiceFlow = ai.defineFlow(
     }
     
     // Stage 2: Analyze the transcribed text to create a vocal profile.
-    const vocalProfileResponse = await ai.generate({
+    const { text: vocalProfile } = await ai.generate({
         prompt: `Analyze the following text transcription to create a vocal profile. Describe the likely tone, pace, and style of the speaker. Be descriptive and creative.
         Transcription: "${transcribedText}"
         Vocal Profile:`,
         config: { temperature: 0.7 },
     });
-    const vocalProfile = vocalProfileResponse.text;
     
     // Stage 3: Synthesize the new text using the generated vocal profile as guidance.
     const { media } = await ai.generate({
@@ -95,6 +95,7 @@ const cloneVoiceFlow = ai.defineFlow(
 
     return {
       audioUrl: `data:audio/wav;base64,${wavBase64}`,
+      transcribedText: transcribedText,
     };
   }
 );
