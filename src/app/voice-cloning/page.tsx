@@ -131,7 +131,7 @@ export default function VoiceCloningPage() {
             EDENA
           </Link>
           <span className="text-xl text-gray-400">/</span>
-          <h1 className="text-2xl font-headline">Voice Cloning</h1>
+          <h1 className="text-xl font-headline">Voice Cloning</h1>
         </div>
         <Button variant="ghost" asChild size="icon">
             <Link href="/"><ArrowLeft /></Link>
@@ -261,3 +261,5 @@ export default function VoiceCloningPage() {
     </div>
   );
 }
+
+    
