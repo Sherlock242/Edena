@@ -218,7 +218,7 @@ export default function VoiceCloningPage() {
                         </div>
                         <Button className="w-full" variant="outline" onClick={handleOrbClick} disabled={recordingState === 'processing' || !!selectedVoice}>
                             {recordingState === 'recording' ? <MicOff className="mr-2"/> : <Mic className="mr-2"/>}
-                            {recording-state === 'recording' ? 'Stop Recording' : 'Record a Voice Sample'}
+                            {recordingState === 'recording' ? 'Stop Recording' : 'Record a Voice Sample'}
                         </Button>
                     </CardContent>
                 </Card>
