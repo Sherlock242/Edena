@@ -1,9 +1,8 @@
 'use server';
 /**
  * @fileOverview A Genkit flow for cloning a voice and generating speech.
- * This flow simulates voice cloning by transcribing an audio sample, analyzing
- * the transcription to create a vocal profile, and then using that profile
- * to guide the text-to-speech generation.
+ * This flow analyzes the vocal characteristics of an audio sample and uses that
+ * profile to guide the text-to-speech generation, simulating a voice clone.
  *
  * - cloneVoice - A function that takes an audio sample and text, and returns speech.
  * - CloneVoiceInput - The input type for the cloneVoice function.
@@ -22,7 +21,6 @@ export type CloneVoiceInput = z.infer<typeof CloneVoiceInputSchema>;
 
 const CloneVoiceOutputSchema = z.object({
   audioUrl: z.string().describe('The data URI of the generated audio.'),
-  transcribedText: z.string().optional().describe('The text transcribed from the audio sample.'),
 });
 export type CloneVoiceOutput = z.infer<typeof CloneVoiceOutputSchema>;
 
@@ -56,31 +54,25 @@ const cloneVoiceFlow = ai.defineFlow(
     outputSchema: CloneVoiceOutputSchema,
   },
   async (input) => {
-    // Stage 1: Transcribe the audio to give the AI "ears".
-    // This uses a model specialized for audio processing.
-    const { text: transcribedText } = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
-      prompt: [{ media: { url: input.audioDataUri } }, {text: 'Transcribe this audio.'}],
-    });
-
-    if (!transcribedText) {
-        throw new Error("Could not understand the provided audio sample.");
-    }
-    
-    // Stage 2: Analyze the transcribed text to create a vocal profile.
+    // Stage 1: Analyze the audio to create a vocal profile.
+    // The AI "listens" to the audio and describes its characteristics.
     const { text: vocalProfile } = await ai.generate({
         model: 'googleai/gemini-1.5-flash',
-        prompt: `Analyze the following text transcription to create a vocal profile. Describe the likely tone, pace, and style of the speaker. Be descriptive and creative.
-        Transcription: "${transcribedText}"
-        Vocal Profile:`,
-        config: { temperature: 0.7 },
+        prompt: [
+            { media: { url: input.audioDataUri } },
+            { text: `Analyze the provided audio. Do NOT transcribe the words. Instead, describe the speaker's vocal characteristics. Consider their pitch, pace, tone, and any notable style. Output a "Vocal Profile".` }
+        ],
+        config: { temperature: 0.3 },
     });
+
+    if (!vocalProfile) {
+        throw new Error("Could not analyze the provided audio sample to create a vocal profile.");
+    }
     
-    // Stage 3: Synthesize the new text using the generated vocal profile as guidance.
+    // Stage 2: Synthesize the new text using the generated vocal profile as guidance.
     const { media } = await ai.generate({
         model: 'googleai/gemini-1.5-flash-tts',
-        prompt: `Text to speak: "${input.text}"
-        Vocal Profile Instructions: Generate the speech in a voice that matches the following profile: ${vocalProfile}`,
+        prompt: `Text to speak: "${input.text}"\n\nVocal Profile Instructions: Generate the speech in a voice that matches the following profile: ${vocalProfile}`,
         config: {
             responseModalities: ['AUDIO'],
         },
@@ -96,7 +88,6 @@ const cloneVoiceFlow = ai.defineFlow(
 
     return {
       audioUrl: `data:audio/wav;base64,${wavBase64}`,
-      transcribedText: transcribedText,
     };
   }
 );

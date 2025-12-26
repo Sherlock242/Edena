@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Play, Loader2, Wand2, ArrowLeft, Waves } from 'lucide-react';
+import { Mic, MicOff, Play, Loader2, ArrowLeft, Waves } from 'lucide-react';
 import { cloneVoice } from '@/ai/flows/voice-clone';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -16,7 +16,6 @@ export default function VoiceCloningPage() {
   const [textToSpeak, setTextToSpeak] = useState('Sir, I have replicated the voice. The synthesis is now complete.');
   const [generatedAudio, setGeneratedAudio] = useState<string | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
-  const [transcribedSample, setTranscribedSample] = useState<string | null>(null);
   const [dots, setDots] = useState('');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -61,7 +60,6 @@ export default function VoiceCloningPage() {
       mediaRecorderRef.current.start();
       setRecordingState('recording');
       setGeneratedAudio(null);
-      setTranscribedSample(null);
 
     } catch (err) {
       console.error('Error accessing microphone:', err);
@@ -92,9 +90,6 @@ export default function VoiceCloningPage() {
       });
       
       setGeneratedAudio(result.audioUrl);
-      if (result.transcribedText) {
-        setTranscribedSample(`"${result.transcribedText}"`);
-      }
       
       toast({
         title: 'Voice Generated',
@@ -107,7 +102,7 @@ export default function VoiceCloningPage() {
       toast({
         variant: 'destructive',
         title: 'AI Error',
-        description: 'The internal AI model may be temporarily unavailable or failed to process the request.',
+        description: (error as Error).message || 'An unknown AI error occurred.',
       });
       setRecordingState('idle');
     }
@@ -188,7 +183,7 @@ export default function VoiceCloningPage() {
                     {recordingState === 'finished' && (
                         <div className="text-center">
                             <p className="text-lg text-green-400">Synthesis Complete!</p>
-                            {transcribedSample && <p className="text-sm text-muted-foreground mt-1">Heard sample: {transcribedSample}</p>}
+                            <p className="text-sm text-muted-foreground mt-1">Click the orb to provide a new voice sample.</p>
                         </div>
                     )}
                 </motion.div>
