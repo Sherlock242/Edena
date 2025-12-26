@@ -122,7 +122,7 @@ export default function VoiceCloningPage() {
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   className="hidden"
-                  accept="audio/mp3,audio/wav"
+                  accept="audio/mp3,audio/mpeg,audio/wav"
                 />
                 {audioFileName && <p className="text-sm text-muted-foreground">{audioFileName}</p>}
               </div>
