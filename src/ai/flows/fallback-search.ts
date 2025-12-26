@@ -62,7 +62,7 @@ export const fallbackSearch = ai.defineFlow(
                 // OpenRouter specific headers.
                 // See: https://openrouter.ai/docs#api-reference
                 custom: {
-                    "HTTP-Referer": "http://localhost:3000", // Replace with your actual site URL in production
+                    "HTTP-Referer": "https://firebaseship.com", // Replace with your actual site URL in production
                     "X-Title": "Edena AI" // Replace with your app name
                 }
             }
