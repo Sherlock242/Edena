@@ -1,27 +1,25 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Play, Loader2, ArrowLeft, Waves, Sparkles, AudioLines, Upload } from 'lucide-react';
+import { Mic, MicOff, Play, Loader2, ArrowLeft, Waves, Sparkles, AudioLines, Upload, Save, Download, Trash2, Library } from 'lucide-react';
 import { cloneVoice } from '@/ai/flows/voice-clone';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSavedVoices } from '@/hooks/use-saved-voices';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
 
 type RecordingState = 'idle' | 'recording' | 'processing' | 'finished';
 
 const PREBUILT_VOICES = {
-    'Male': [
-        'achird', 'alnilam', 'charon', 'fenrir', 'gacrux', 'iapetus', 'orus', 'puck', 'rasalgethi', 'sadachbia', 'sadaltager', 'schedar', 'sulafat', 'umbriel', 'zephyr', 'zubenelgenubi'
-    ],
-    'Female': [
-        'achernar', 'algenib', 'algieba', 'aoede', 'autonoe', 'callirrhoe', 'despina', 'enceladus', 'erinome', 'kore', 'laomedeia', 'leda', 'pulcherrima', 'vindemiatrix'
-    ]
+    'Male': ['achird', 'alnilam', 'charon', 'fenrir', 'gacrux', 'iapetus', 'orus', 'puck', 'rasalgethi', 'sadachbia', 'sadaltager', 'schedar', 'sulafat', 'umbriel', 'zephyr', 'zubenelgenubi'],
+    'Female': ['achernar', 'algenib', 'algieba', 'aoede', 'autonoe', 'callirrhoe', 'despina', 'enceladus', 'erinome', 'kore', 'laomedeia', 'leda', 'pulcherrima', 'vindemiatrix']
 };
-
 
 export default function VoiceCloningPage() {
   const [textToSpeak, setTextToSpeak] = useState('Sir, I have replicated the voice. The synthesis is now complete.');
@@ -30,7 +28,9 @@ export default function VoiceCloningPage() {
   const [dots, setDots] = useState('');
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [userAudioDataUri, setUserAudioDataUri] = useState<string | null>(null);
+  const [voiceNameToSave, setVoiceNameToSave] = useState('');
 
+  const { savedVoices, addVoice, deleteVoice } = useSavedVoices();
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +76,7 @@ export default function VoiceCloningPage() {
       setUserAudioDataUri(base64Audio);
       toast({ title: 'Audio Sample Ready', description: 'Your voice sample has been loaded and is ready for generation.' });
       setRecordingState('idle');
+      setSelectedVoice(null); // Clear pre-built voice selection
     };
      reader.onerror = () => {
         console.error("Error reading audio data");
@@ -146,10 +147,43 @@ export default function VoiceCloningPage() {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => { setDots(prev => (prev.length >= 3 ? '' : prev + '.')); }, 500);
     return () => clearInterval(interval);
   }, []);
+
+  const handleSaveVoice = () => {
+    if (!voiceNameToSave.trim()) {
+        toast({ title: 'Invalid Name', description: 'Please enter a name for the voice profile.', variant: 'destructive' });
+        return;
+    }
+    if (!userAudioDataUri) {
+        toast({ title: 'No Audio Sample', description: 'You can only save a recorded or uploaded voice sample.', variant: 'destructive' });
+        return;
+    }
+    addVoice({ name: voiceNameToSave, audioDataUri: userAudioDataUri });
+    toast({ title: 'Voice Saved', description: `Voice profile "${voiceNameToSave}" has been saved to your library.` });
+    setVoiceNameToSave('');
+  };
+
+  const handleDownloadAudio = () => {
+    if (!generatedAudio) return;
+    const link = document.createElement('a');
+    link.href = generatedAudio;
+    link.download = `edena_tts_${Date.now()}.wav`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const handleSelectSavedVoice = (voiceName: string) => {
+    const voice = savedVoices.find(v => v.name === voiceName);
+    if (voice) {
+        setUserAudioDataUri(voice.audioDataUri);
+        setSelectedVoice(null); // Unselect any pre-built voice
+        toast({ title: 'Voice Loaded', description: `Voice profile "${voiceName}" is ready for generation.`});
+    }
+  };
 
   const orbState = recordingState === 'recording' || recordingState === 'processing';
   const orbGradient = orbState ? 'linear-gradient(to bottom right, #FF0000, #B22222)' : 'linear-gradient(to bottom right, #8A2BE2, #4B0082)';
@@ -172,7 +206,7 @@ export default function VoiceCloningPage() {
       </header>
 
       <main className="flex-1 flex flex-col items-center p-4 md:p-8 overflow-y-auto">
-        <div className="w-full max-w-2xl flex flex-col items-center text-center py-8">
+        <div className="w-full max-w-4xl flex flex-col items-center text-center py-8">
 
             <motion.div 
                 layout 
@@ -223,46 +257,86 @@ export default function VoiceCloningPage() {
             </AnimatePresence>
 
             <div className="w-full grid gap-6 mt-8">
-                <Card className="bg-card/50 border-purple-500/30">
-                    <CardHeader>
-                    <CardTitle className="flex items-center"><AudioLines className="mr-2 h-5 w-5 text-purple-400"/>1. Choose Voice Source(s)</CardTitle>
-                    <CardDescription>You can use a pre-built voice, provide your own sample, or combine both.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4">
-                        <Select onValueChange={(value) => setSelectedVoice(value === 'none' ? null : value)} defaultValue='none'>
-                            <SelectTrigger className="w-full bg-background/50 text-base" disabled={recordingState === 'recording' || recordingState === 'processing'}>
-                                <SelectValue placeholder="Select a pre-built target voice... (optional)" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">None (Clone from sample only)</SelectItem>
-                                <SelectGroup>
-                                    <SelectLabel>Female</SelectLabel>
-                                    {PREBUILT_VOICES.Female.map(voice => <SelectItem key={voice} value={voice}>{voice}</SelectItem>)}
-                                </SelectGroup>
-                                <SelectGroup>
-                                    <SelectLabel>Male</SelectLabel>
-                                    {PREBUILT_VOICES.Male.map(voice => <SelectItem key={voice} value={voice}>{voice}</SelectItem>)}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                         <div className="flex items-center text-sm text-muted-foreground">
-                            <div className="flex-grow border-t border-muted-foreground/30"></div>
-                            <div className="mx-4 flex-shrink-0">AND / OR</div>
-                            <div className="flex-grow border-t border-muted-foreground/30"></div>
-                        </div>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                          <Button className="w-full" variant="outline" onClick={handleStartRecording} disabled={recordingState === 'processing'}>
-                              {recordingState === 'recording' ? <MicOff className="mr-2"/> : <Mic className="mr-2"/>}
-                              {recordingState === 'recording' ? 'Stop Recording' : 'Record Voice Sample'}
-                          </Button>
-                          <Button className="w-full" variant="outline" onClick={handleUploadClick} disabled={recordingState !== 'idle'}>
-                              <Upload className="mr-2"/>
-                              Upload Audio File
-                          </Button>
-                          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="audio/*" className="hidden" />
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="grid md:grid-cols-2 gap-6">
+                    <Card className="bg-card/50 border-purple-500/30">
+                        <CardHeader>
+                        <CardTitle className="flex items-center"><AudioLines className="mr-2 h-5 w-5 text-purple-400"/>1. Choose Voice Source(s)</CardTitle>
+                        <CardDescription>Use a pre-built voice, your own sample, or both for complex cloning.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                            <Select onValueChange={(value) => setSelectedVoice(value === 'none' ? null : value)} value={selectedVoice || 'none'}>
+                                <SelectTrigger className="w-full bg-background/50 text-base">
+                                    <SelectValue placeholder="Select a pre-built target voice... (optional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">None (Clone from sample only)</SelectItem>
+                                    <SelectGroup>
+                                        <SelectLabel>Female</SelectLabel>
+                                        {PREBUILT_VOICES.Female.map(voice => <SelectItem key={voice} value={voice}>{voice}</SelectItem>)}
+                                    </SelectGroup>
+                                    <SelectGroup>
+                                        <SelectLabel>Male</SelectLabel>
+                                        {PREBUILT_VOICES.Male.map(voice => <SelectItem key={voice} value={voice}>{voice}</SelectItem>)}
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                            <div className="flex items-center text-sm text-muted-foreground">
+                                <div className="flex-grow border-t border-muted-foreground/30"></div>
+                                <div className="mx-4 flex-shrink-0">OR</div>
+                                <div className="flex-grow border-t border-muted-foreground/30"></div>
+                            </div>
+                            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                            <Button className="w-full" variant="outline" onClick={handleStartRecording} disabled={recordingState === 'processing'}>
+                                {recordingState === 'recording' ? <MicOff className="mr-2"/> : <Mic className="mr-2"/>}
+                                {recordingState === 'recording' ? 'Stop Recording' : 'Record Sample'}
+                            </Button>
+                            <Button className="w-full" variant="outline" onClick={handleUploadClick} disabled={recordingState !== 'idle'}>
+                                <Upload className="mr-2"/>
+                                Upload Sample
+                            </Button>
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="audio/*" className="hidden" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                     <Card className="bg-card/50 border-purple-500/30">
+                        <CardHeader>
+                            <CardTitle className="flex items-center"><Library className="mr-2 h-5 w-5 text-purple-400" />Saved Voice Library</CardTitle>
+                            <CardDescription>Select a previously saved voice profile to use for generation.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           {savedVoices.length > 0 ? (
+                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                    {savedVoices.map(voice => (
+                                        <div key={voice.name} className="flex items-center justify-between bg-background/50 p-2 rounded-md">
+                                            <button className="text-left flex-grow hover:text-purple-400" onClick={() => handleSelectSavedVoice(voice.name)}>
+                                                {voice.name}
+                                            </button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>This will permanently delete the "{voice.name}" voice profile. This action cannot be undone.</AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => deleteVoice(voice.name)}>Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    ))}
+                                </div>
+                           ) : (
+                               <p className="text-sm text-muted-foreground text-center py-8">No saved voices yet. Save a generated voice to start your library.</p>
+                           )}
+                        </CardContent>
+                    </Card>
+                </div>
                 <Card className="bg-card/50 border-purple-500/30">
                     <CardHeader>
                     <CardTitle className="flex items-center"><Sparkles className="mr-2 h-5 w-5 text-purple-400"/>2. Enter Text & Generate</CardTitle>
@@ -285,12 +359,42 @@ export default function VoiceCloningPage() {
                             <Card className="bg-card/50 border-purple-500/30">
                             <CardHeader>
                                 <CardTitle className="flex items-center"><Play className="mr-2 text-purple-400" />3. Result</CardTitle>
-                                <CardDescription>Listen to the generated audio below.</CardDescription>
+                                <CardDescription>Listen, save the voice profile, or download the audio file.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <audio controls src={generatedAudio} className="w-full">
                                 Your browser does not support the audio element.
                                 </audio>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="outline" disabled={!userAudioDataUri}>
+                                                <Save className="mr-2" /> Save Voice Profile
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Save Voice Profile</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Give this voice a name. This will save the source audio sample to your browser's local storage for later use.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <Input
+                                                placeholder="e.g., 'My Morning Voice'"
+                                                value={voiceNameToSave}
+                                                onChange={(e) => setVoiceNameToSave(e.target.value)}
+                                            />
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleSaveVoice}>Save</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+
+                                    <Button variant="outline" onClick={handleDownloadAudio}>
+                                        <Download className="mr-2" /> Download .wav file
+                                    </Button>
+                                </div>
                             </CardContent>
                             </Card>
                         </motion.div>
