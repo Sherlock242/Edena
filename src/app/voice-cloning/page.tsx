@@ -138,13 +138,13 @@ export default function VoiceCloningPage() {
         </Button>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 overflow-auto">
-        <div className="w-full max-w-2xl flex flex-col items-center justify-center text-center">
+      <main className="flex-1 flex flex-col items-center p-4 md:p-8 overflow-y-auto">
+        <div className="w-full max-w-2xl flex flex-col items-center text-center py-8">
 
             <motion.div 
                 layout 
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="relative flex items-center justify-center w-[250px] h-[250px] cursor-pointer mb-8" 
+                className="relative flex items-center justify-center w-[250px] h-[250px] cursor-pointer mb-8 shrink-0" 
                 onClick={handleOrbClick}
             >
                 <AnimatePresence>
