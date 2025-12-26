@@ -19,11 +19,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+        <link rel="icon" href="/icon.png" />
       </head>
       <body className="font-body antialiased">
         {children}
         <Toaster />
-        <Script type='text/javascript' src='//certainwolveshonestly.com/e3/6d/06/e36d068ab2ed1fe0979437ad7a7d4e6a.js' />
         <Script type='text/javascript' src='//certainwolveshonestly.com/15/a8/0e/15a80e7627074b2defc9f1024108d085.js' />
         <Script async={true} data-cfasync="false" src="//certainwolveshonestly.com/06c87804fd528cad54263f87167fe8f9/invoke.js" />
       </body>
