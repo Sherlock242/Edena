@@ -71,7 +71,7 @@ const cloneVoiceFlow = ai.defineFlow(
     
     // Stage 2: Synthesize the new text using the generated vocal profile as guidance.
     const { media } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash-tts',
+        model: 'googleai/gemini-2.5-flash-preview-tts',
         prompt: `Text to speak: "${input.text}"\n\nVocal Profile Instructions: Generate the speech in a voice that matches the following profile: ${vocalProfile}`,
         config: {
             responseModalities: ['AUDIO'],
