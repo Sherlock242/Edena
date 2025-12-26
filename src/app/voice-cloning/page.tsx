@@ -26,7 +26,7 @@ export default function VoiceCloningPage() {
   const [generatedAudio, setGeneratedAudio] = useState<string | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [dots, setDots] = useState('');
-  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState<string | null>('zephyr');
   const [userAudioDataUri, setUserAudioDataUri] = useState<string | null>(null);
   const [voiceNameToSave, setVoiceNameToSave] = useState('');
 
