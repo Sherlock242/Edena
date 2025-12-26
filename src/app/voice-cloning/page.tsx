@@ -15,12 +15,13 @@ type RecordingState = 'idle' | 'recording' | 'processing' | 'finished';
 
 const PREBUILT_VOICES = {
     'Male': [
-        'Arcturus', 'Canopus', 'Spica', 'Hadar', 'Rigel', 'Shaula', 'Pollux', 'Acrux'
+        'achird', 'alnilam', 'charon', 'fenrir', 'gacrux', 'iapetus', 'orus', 'puck', 'rasalgethi', 'sadachbia', 'sadaltager', 'schedar', 'sulafat', 'umbriel', 'zephyr', 'zubenelgenubi'
     ],
     'Female': [
-        'Achernar', 'Algenib', 'Antares', 'Capella', 'Deneb', 'Mirfak', 'Sirius', 'Vega', 'Electra', 'Maia', 'Taygeta'
+        'achernar', 'algenib', 'algieba', 'aoede', 'autonoe', 'callirrhoe', 'despina', 'enceladus', 'erinome', 'kore', 'laomedeia', 'leda', 'pulcherrima', 'vindemiatrix'
     ]
-}
+};
+
 
 export default function VoiceCloningPage() {
   const [textToSpeak, setTextToSpeak] = useState('Sir, I have replicated the voice. The synthesis is now complete.');
