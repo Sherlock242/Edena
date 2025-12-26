@@ -1,7 +1,9 @@
 'use server';
 /**
  * @fileOverview A Genkit flow for cloning a voice and generating speech.
- * This is a placeholder and uses a standard text-to-speech voice.
+ * This flow simulates voice cloning by transcribing an audio sample, analyzing
+ * the transcription to create a vocal profile, and then using that profile
+ * to guide the text-to-speech generation.
  *
  * - cloneVoice - A function that takes an audio sample and text, and returns speech.
  * - CloneVoiceInput - The input type for the cloneVoice function.
@@ -53,21 +55,33 @@ const cloneVoiceFlow = ai.defineFlow(
     outputSchema: CloneVoiceOutputSchema,
   },
   async (input) => {
-    // !! IMPORTANT !!
-    // This is a placeholder implementation. True real-time voice cloning is a
-    // highly complex feature. This implementation uses a standard TTS voice
-    // to simulate the functionality for UI and flow purposes.
+    // Stage 1: Transcribe the audio to give the AI "ears".
+    // This uses a model specialized for audio processing.
+    const { text: transcribedText } = await ai.generate({
+      model: 'googleai/gemini-2.5-flash-audio',
+      prompt: [{ media: { url: input.audioDataUri } }],
+    });
+
+    if (!transcribedText) {
+        throw new Error("Could not understand the provided audio sample.");
+    }
     
+    // Stage 2: Analyze the transcribed text to create a vocal profile.
+    const vocalProfileResponse = await ai.generate({
+        prompt: `Analyze the following text transcription to create a vocal profile. Describe the likely tone, pace, and style of the speaker. Be descriptive and creative.
+        Transcription: "${transcribedText}"
+        Vocal Profile:`,
+        config: { temperature: 0.7 },
+    });
+    const vocalProfile = vocalProfileResponse.text;
+    
+    // Stage 3: Synthesize the new text using the generated vocal profile as guidance.
     const { media } = await ai.generate({
         model: 'googleai/gemini-2.5-flash-preview-tts',
-        prompt: input.text,
+        prompt: `Text to speak: "${input.text}"
+        Vocal Profile Instructions: Generate the speech in a voice that matches the following profile: ${vocalProfile}`,
         config: {
             responseModalities: ['AUDIO'],
-            speechConfig: {
-                voiceConfig: {
-                    prebuiltVoiceConfig: { voiceName: 'Algenib' },
-                },
-            },
         },
     });
 
