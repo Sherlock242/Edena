@@ -57,7 +57,7 @@ const cloneVoiceFlow = ai.defineFlow(
     // Stage 1: Analyze the audio to create a vocal profile.
     // The AI "listens" to the audio and describes its characteristics.
     const { text: vocalProfile } = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
+        model: 'googleai/gemini-2.5-flash',
         prompt: [
             { media: { url: input.audioDataUri } },
             { text: `Analyze the provided audio. Do NOT transcribe the words. Instead, describe the speaker's vocal characteristics. Consider their pitch, pace, tone, and any notable style. Output a "Vocal Profile".` }
