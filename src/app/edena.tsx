@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Search, Image as ImageIcon, Video, VideoOff, SwitchCamera, Shield } from 'lucide-react';
+import { Menu, Search, Image as ImageIcon, Video, VideoOff, SwitchCamera, Shield, Mic } from 'lucide-react';
 import { performSearch } from '@/ai/flows/search';
 import { generateImage } from '@/ai/flows/generate-image';
 import { analyzeImage } from '@/ai/flows/analyze-image';
@@ -573,6 +573,9 @@ const menuIconColor = appMode === 'image' ? 'orangered' : appMode === 'vision' ?
                                   </Button>
                                   <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleModeChange('vision')}>
                                       <Video className="mr-6 h-10 w-10" /><span>Vision</span>
+                                  </Button>
+                                  <Button variant="ghost" className="text-4xl h-24 text-white hover:bg-white/10" onClick={() => handleNavigation('/voice-cloning')}>
+                                      <Mic className="mr-6 h-10 w-10" /><span>Voice Clone</span>
                                   </Button>
                               </div>
                           </SheetContent>
