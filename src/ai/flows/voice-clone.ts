@@ -58,8 +58,8 @@ const cloneVoiceFlow = ai.defineFlow(
     // Stage 1: Transcribe the audio to give the AI "ears".
     // This uses a model specialized for audio processing.
     const { text: transcribedText } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-audio',
-      prompt: [{ media: { url: input.audioDataUri } }],
+      model: 'googleai/gemini-1.5-flash',
+      prompt: [{ media: { url: input.audioDataUri } }, {text: 'Transcribe this audio.'}],
     });
 
     if (!transcribedText) {
@@ -77,7 +77,7 @@ const cloneVoiceFlow = ai.defineFlow(
     
     // Stage 3: Synthesize the new text using the generated vocal profile as guidance.
     const { media } = await ai.generate({
-        model: 'googleai/gemini-2.5-flash-preview-tts',
+        model: 'googleai/gemini-1.5-flash-tts',
         prompt: `Text to speak: "${input.text}"
         Vocal Profile Instructions: Generate the speech in a voice that matches the following profile: ${vocalProfile}`,
         config: {
