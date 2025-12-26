@@ -7,6 +7,7 @@
  * - performSearch - A function that takes a query and returns a search result.
  * - PerformSearchInput - The input type for the performSearch function.
  * - PerformSearchOutput - The return type for the performSearch function.
+ * - performSearchPrompt - The exported Genkit prompt definition.
  */
 
 import {ai} from '@/ai/genkit';
@@ -25,6 +26,7 @@ import { spaceNewsTool } from '../tools/space-news';
 import { jokesTool } from '../tools/jokes';
 import { getGreetingResponse } from '../greetings';
 import { stripQueryPrefix } from '../prefixes';
+import { fallbackSearch } from './fallback-search';
 
 const PerformSearchInputSchema = z.object({
   query: z.string().describe('The search query from the user.'),
@@ -180,11 +182,11 @@ export async function performSearch(
       console.warn("DDG search failed, proceeding to next step.", e);
   }
 
-  // Level 4: If all direct methods fail, use the main AI flow.
-  return performSearchFlow({ query: originalQuery });
+  // Level 4: If all direct methods fail, use the main AI flow with fallback logic.
+  return fallbackSearch({ query: originalQuery });
 }
 
-const prompt = ai.definePrompt({
+export const performSearchPrompt = ai.definePrompt({
   name: 'performSearchPrompt',
   input: {schema: PerformSearchInputSchema},
   output: {schema: z.object({ response: z.string() })},
@@ -211,47 +213,3 @@ LANGUAGE AND SCRIPT RULES:
 
 User Query: {{{query}}}`
 });
-
-
-const performSearchFlow = ai.defineFlow(
-  {
-    name: 'performSearchFlow',
-    inputSchema: PerformSearchInputSchema,
-    outputSchema: PerformSearchOutputSchema,
-  },
-  async input => {
-    // This flow is now the main AI-powered step and contains the final fallbacks.
-    try {
-      const {output} = await prompt(input);
-      if (output && isValidSearchResult(output.response)) {
-        return { response: `(AI+API) ${output.response}` };
-      }
-      // If the AI prompt returns an invalid response, we'll fall through to the backup race.
-      throw new Error("Primary AI prompt failed to produce a valid output.");
-    } catch(e) {
-        console.error("Primary search flow failed, attempting fallback search race.", e);
-        
-        // FINAL FALLBACK: Race DDG search against the main AI prompt again as a safety net.
-        try {
-            const raceWinner = await Promise.any([
-                (async () => {
-                    const ddgResult = await ddgSearchTool(input);
-                    if (isValidSearchResult(ddgResult)) return `(Dgg) ${ddgResult}`;
-                    throw new Error("Fallback DDG search was inconclusive.");
-                })(),
-                (async () => {
-                    const { output } = await prompt({ query: "Search for: " + input.query });
-                    if (output && isValidSearchResult(output.response)) return `(AI+API) ${output.response}`;
-                    throw new Error("Fallback AI prompt was inconclusive.");
-                })(),
-            ]);
-
-            return { response: raceWinner };
-
-        } catch (fallbackError) {
-            console.error("All search methods, including fallbacks, have failed.", fallbackError);
-            return { response: "(System) I'm sorry, but I'm having trouble connecting to all of my information sources right now. Please try again in a moment." };
-        }
-    }
-  }
-);
