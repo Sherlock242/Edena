@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Play, Loader2, ArrowLeft, Waves, Sparkles, AudioLines, Upload, Save, Download, Trash2, Library } from 'lucide-react';
+import { Mic, MicOff, Play, Loader2, ArrowLeft, Waves, Sparkles, AudioLines, Upload, Save, Download, Trash2, Library, CheckCircle2, XCircle } from 'lucide-react';
 import { cloneVoice } from '@/ai/flows/voice-clone';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -29,6 +29,8 @@ export default function VoiceCloningPage() {
   const [selectedVoice, setSelectedVoice] = useState<string | null>('zephyr');
   const [userAudioDataUri, setUserAudioDataUri] = useState<string | null>(null);
   const [voiceNameToSave, setVoiceNameToSave] = useState('');
+  const [loadedSampleName, setLoadedSampleName] = useState<string | null>(null);
+
 
   const { savedVoices, addVoice, deleteVoice } = useSavedVoices();
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -68,13 +70,14 @@ export default function VoiceCloningPage() {
     }
   }, [textToSpeak, selectedVoice, userAudioDataUri, toast]);
 
-  const processAndSetAudio = (audioBlob: Blob) => {
+  const processAndSetAudio = (audioBlob: Blob, sampleName: string) => {
     const reader = new FileReader();
     reader.readAsDataURL(audioBlob);
     reader.onloadend = async () => {
       const base64Audio = reader.result as string;
       setUserAudioDataUri(base64Audio);
-      toast({ title: 'Audio Sample Ready', description: 'Your voice sample has been loaded and is ready for generation.' });
+      setLoadedSampleName(sampleName);
+      toast({ title: 'Audio Sample Ready', description: `Your voice sample "${sampleName}" has been loaded.` });
       setRecordingState('idle');
     };
      reader.onerror = () => {
@@ -103,7 +106,7 @@ export default function VoiceCloningPage() {
       mediaRecorderRef.current.ondataavailable = (event) => { audioChunksRef.current.push(event.data); };
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        processAndSetAudio(audioBlob);
+        processAndSetAudio(audioBlob, "Recorded Sample");
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -128,7 +131,7 @@ export default function VoiceCloningPage() {
 
     setUserAudioDataUri(null);
     setRecordingState('processing');
-    processAndSetAudio(file);
+    processAndSetAudio(file, file.name);
     event.target.value = ''; // Reset file input
   }
 
@@ -179,9 +182,16 @@ export default function VoiceCloningPage() {
     const voice = savedVoices.find(v => v.name === voiceName);
     if (voice) {
         setUserAudioDataUri(voice.audioDataUri);
+        setLoadedSampleName(voice.name);
         setSelectedVoice(null); // Unselect any pre-built voice
-        toast({ title: 'Voice Loaded', description: `Voice profile "${voiceName}" is ready for generation.`});
+        toast({ title: 'Voice Loaded', description: `Voice profile "${voice.name}" is ready for generation.`});
     }
+  };
+
+  const clearUserAudio = () => {
+    setUserAudioDataUri(null);
+    setLoadedSampleName(null);
+    toast({ title: 'Audio Sample Cleared', description: 'The custom voice sample has been removed.'});
   };
 
   const orbState = recordingState === 'recording' || recordingState === 'processing';
@@ -295,6 +305,26 @@ export default function VoiceCloningPage() {
                             </Button>
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="audio/*" className="hidden" />
                             </div>
+                             <AnimatePresence>
+                                {loadedSampleName && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="mt-4 p-3 bg-green-900/30 border border-green-500/50 rounded-lg flex items-center justify-between"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-5 w-5 text-green-400" />
+                                            <p className="text-sm text-green-300 truncate">
+                                                Active Sample: <span className="font-medium">{loadedSampleName}</span>
+                                            </p>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-500" onClick={clearUserAudio}>
+                                            <XCircle className="h-5 w-5" />
+                                        </Button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </CardContent>
                     </Card>
                      <Card className="bg-card/50 border-purple-500/30">
