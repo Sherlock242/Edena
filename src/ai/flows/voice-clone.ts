@@ -55,48 +55,50 @@ const cloneVoiceFlow = ai.defineFlow(
     outputSchema: CloneVoiceOutputSchema,
   },
   async (input) => {
-    let media;
     let ttsPrompt = `Text to speak: "${input.text}"`;
 
     if (input.audioDataUri) {
-        // Stage 1: Analyze the user's audio to create a vocal profile.
-        const { text: vocalProfile } = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
-            prompt: [
-                { media: { url: input.audioDataUri } },
-                { text: `Analyze the provided audio. Do NOT transcribe the words. Instead, describe the speaker's vocal characteristics in a "Vocal Profile".` }
-            ],
-            config: { temperature: 0.3 },
-        });
+      // Stage 1: Analyze the user's audio to create a vocal profile.
+      const { text: vocalProfile } = await ai.generate({
+        model: 'googleai/gemini-2.5-flash',
+        prompt: [
+          { media: { url: input.audioDataUri } },
+          { text: `Analyze the provided audio. Do NOT transcribe the words. Instead, describe the speaker's vocal characteristics in a "Vocal Profile".` }
+        ],
+        config: { temperature: 0.3 },
+      });
 
-        if (!vocalProfile) {
-            throw new Error("Could not analyze the provided audio sample to create a vocal profile.");
-        }
-        
-        if (input.voiceName) {
-            // If both sample and pre-built voice are present, use the pre-built as a target for the sample.
-            ttsPrompt += `\n\nINSTRUCTIONS: Synthesize the speech using the vocal characteristics from the following profile as a base, but steer the voice to match the style of the pre-built voice known as "${input.voiceName}".\n\n${vocalProfile}`;
-        } else {
-            // If only a sample is present, clone it directly.
-            ttsPrompt += `\n\nINSTRUCTIONS: Generate the speech in a voice that faithfully replicates the following vocal profile:\n${vocalProfile}`;
-        }
+      if (!vocalProfile) {
+        throw new Error("Could not analyze the provided audio sample to create a vocal profile.");
+      }
+      
+      if (input.voiceName) {
+        // If both sample and pre-built voice are present, use the pre-built as a target for the sample.
+        ttsPrompt += `\n\nINSTRUCTIONS: Synthesize the speech using the vocal characteristics from the following profile as a base, but steer the voice to match the style of the pre-built voice known as "${input.voiceName}".\n\n${vocalProfile}`;
+      } else {
+        // If only a sample is present, clone it directly.
+        ttsPrompt += `\n\nINSTRUCTIONS: Generate the speech in a voice that faithfully replicates the following vocal profile:\n${vocalProfile}`;
+      }
+    } else if (!input.voiceName) {
+        throw new Error("Either an audio sample or a pre-built voice name must be provided.");
     }
 
     // Stage 2: Synthesize the new text using the constructed prompt and potentially a specified pre-built voice.
     const ttsResponse = await ai.generate({
-        model: 'googleai/gemini-2.5-flash-preview-tts',
-        prompt: ttsPrompt,
-        config: {
-            responseModalities: ['AUDIO'],
-            // If a voiceName is provided (with or without a sample), it guides the synthesis.
-            speechConfig: input.voiceName ? {
-                voiceConfig: {
-                    prebuiltVoiceConfig: { voiceName: input.voiceName },
-                },
-            } : undefined,
-        },
+      model: 'googleai/gemini-2.5-flash-preview-tts',
+      prompt: ttsPrompt,
+      config: {
+        responseModalities: ['AUDIO'],
+        // If a voiceName is provided (with or without a sample), it guides the synthesis.
+        speechConfig: input.voiceName ? {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: input.voiceName },
+          },
+        } : undefined,
+      },
     });
-    media = ttsResponse.media;
+    
+    const media = ttsResponse.media;
 
     if (!media) {
       throw new Error("The AI model did not return any audio media.");
