@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 type RecordingState = 'idle' | 'recording' | 'processing' | 'finished';
 
 const PREBUILT_VOICES = {
-    'Male': ['achird', 'alnilam', 'charon', 'fenrir', 'gacrux', 'iapetus', 'orus', 'puck', 'rasalgethi', 'sadachbia', 'sadaltager', 'schedar', 'sulafat', 'umbriel', 'zephyr', 'zubenelgenubi'],
+    'Male': ['zephyr', 'achird', 'alnilam', 'charon', 'fenrir', 'gacrux', 'iapetus', 'orus', 'puck', 'rasalgethi', 'sadachbia', 'sadaltager', 'schedar', 'sulafat', 'umbriel', 'zubenelgenubi'],
     'Female': ['achernar', 'algenib', 'algieba', 'aoede', 'autonoe', 'callirrhoe', 'despina', 'enceladus', 'erinome', 'kore', 'laomedeia', 'leda', 'pulcherrima', 'vindemiatrix']
 };
 
@@ -76,7 +76,6 @@ export default function VoiceCloningPage() {
       setUserAudioDataUri(base64Audio);
       toast({ title: 'Audio Sample Ready', description: 'Your voice sample has been loaded and is ready for generation.' });
       setRecordingState('idle');
-      setSelectedVoice(null); // Clear pre-built voice selection
     };
      reader.onerror = () => {
         console.error("Error reading audio data");
