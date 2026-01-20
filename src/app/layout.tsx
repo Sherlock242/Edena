@@ -1,5 +1,4 @@
 import type {Metadata} from 'next';
-import Script from 'next/script';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
@@ -24,8 +23,6 @@ export default function RootLayout({
       <body className="font-body antialiased">
         {children}
         <Toaster />
-        <Script type='text/javascript' src='//certainwolveshonestly.com/15/a8/0e/15a80e7627074b2defc9f1024108d085.js' />
-        <Script async={true} data-cfasync="false" src="//certainwolveshonestly.com/06c87804fd528cad54263f87167fe8f9/invoke.js" />
       </body>
     </html>
   );
