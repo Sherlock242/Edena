@@ -26,7 +26,6 @@ import { spaceNewsTool } from '../tools/space-news';
 import { jokesTool } from '../tools/jokes';
 import { getGreetingResponse } from '../greetings';
 import { stripQueryPrefix } from '../prefixes';
-import { fallbackSearch } from './fallback-search';
 
 const PerformSearchInputSchema = z.object({
   query: z.string().describe('The search query from the user.'),
@@ -182,8 +181,19 @@ export async function performSearch(
       console.warn("DDG search failed, proceeding to next step.", e);
   }
 
-  // Level 4: If all direct methods fail, use the main AI flow with fallback logic.
-  return fallbackSearch({ query: originalQuery });
+  // Level 4: If all direct methods fail, use the main AI flow.
+  try {
+    const { output } = await performSearchPrompt({ query: originalQuery });
+    const responseText = output?.response;
+    if (responseText) {
+      return { response: `(AI) ${responseText}` };
+    }
+    throw new Error('Main AI model did not return a valid response.');
+  } catch (error) {
+    console.error('Main search prompt failed with a critical error:', error);
+    // Final response if all attempts fail
+    return { response: "(System) I'm sorry, I'm having trouble connecting to my AI services at the moment. Please check your configuration or try again shortly." };
+  }
 }
 
 export const performSearchPrompt = ai.definePrompt({

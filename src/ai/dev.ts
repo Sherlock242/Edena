@@ -1,9 +1,9 @@
+'use server';
 import { config } from 'dotenv';
 config();
 
 import '@/ai/flows/suggest-related-concepts.ts';
 import '@/ai/flows/search.ts';
-import '@/ai/flows/fallback-search.ts';
 import '@/ai/flows/generate-image.ts';
 import '@/ai/flows/analyze-image.ts';
 import '@/ai/tools/books.ts';
@@ -16,3 +16,6 @@ import '@/ai/tools/media-search.ts';
 import '@/ai/tools/space-news.ts';
 import '@/ai/tools/jokes.ts';
 import '@/ai/prefixes.ts';
+import "./tools/weather";
+import "./tools/dictionary";
+import "./tools/wikipedia";
