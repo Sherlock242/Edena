@@ -22,7 +22,7 @@ const FallbackSearchOutputSchema = z.object({
 export type FallbackSearchOutput = z.infer<typeof FallbackSearchOutputSchema>;
 
 // Define the primary model
-const primaryModel = 'google/gemini-1.5-pro-latest';
+const primaryModel = 'googleai/gemini-1.5-flash-latest';
 
 export async function fallbackSearch(
   input: FallbackSearchInput
@@ -48,7 +48,7 @@ const fallbackSearchFlow = ai.defineFlow(
       const { output: primaryOutput } = await ai.generate(primaryRequest);
       
       if (primaryOutput?.response) {
-        return { response: `(AI+API) ${primaryOutput.response}` };
+        return { response: `(AI) ${primaryOutput.response}` };
       }
       
       throw new Error('Primary model did not return a valid response.');
