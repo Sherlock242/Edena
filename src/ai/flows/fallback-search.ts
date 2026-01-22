@@ -8,8 +8,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { performSearchPrompt } from './search';
-import { GenerateRequest } from 'genkit/generate';
 
 const FallbackSearchInputSchema = z.object({
   query: z.string().describe('The search query from the user.'),
@@ -38,23 +36,24 @@ const fallbackSearchFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      // Attempt to use the primary Google AI model
+      // Attempt to use the primary Google AI model with a simplified prompt
       console.log(`Attempting search with primary model: ${primaryModel}`);
-      const primaryRequest: GenerateRequest = {
-        model: primaryModel,
-        prompt: performSearchPrompt,
-        input: { query: input.query },
-      };
-      const { output: primaryOutput } = await ai.generate(primaryRequest);
       
-      if (primaryOutput?.response) {
-        return { response: `(AI) ${primaryOutput.response}` };
+      const response = await ai.generate({
+        model: primaryModel,
+        prompt: `You are Edena, a precise and logical AI. Answer the following user query directly and concisely.\n\nUser Query: ${input.query}`,
+      });
+
+      const text = response.text;
+      
+      if (text) {
+        return { response: `(AI) ${text}` };
       }
       
-      throw new Error('Primary model did not return a valid response.');
+      throw new Error('Primary model did not return a valid text response.');
 
     } catch (error) {
-      console.error('Search flow failed:', error);
+      console.error('Fallback search flow failed:', error);
       // Final response if all attempts fail
       return { response: "(System) I'm sorry, I'm having trouble connecting to my AI services at the moment. Please check your configuration or try again shortly." };
     }
