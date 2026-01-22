@@ -15,18 +15,24 @@ import { GenerateRequest } from 'genkit/generate';
 const FallbackSearchInputSchema = z.object({
   query: z.string().describe('The search query from the user.'),
 });
-type FallbackSearchInput = z.infer<typeof FallbackSearchInputSchema>;
+export type FallbackSearchInput = z.infer<typeof FallbackSearchInputSchema>;
 
 const FallbackSearchOutputSchema = z.object({
   response: z.string().describe('The AI-generated answer to the search query.'),
 });
-type FallbackSearchOutput = z.infer<typeof FallbackSearchOutputSchema>;
+export type FallbackSearchOutput = z.infer<typeof FallbackSearchOutputSchema>;
 
 // Define the primary and fallback models
-const primaryModel = 'google/gemini-flash-1.5';
+const primaryModel = 'google/gemini-1.5-pro-latest';
 const fallbackModel = 'openrouter/openchat-3.5'; // A fast, free model on OpenRouter
 
-export const fallbackSearch = ai.defineFlow(
+export async function fallbackSearch(
+  input: FallbackSearchInput
+): Promise<FallbackSearchOutput> {
+  return fallbackSearchFlow(input);
+}
+
+const fallbackSearchFlow = ai.defineFlow(
   {
     name: 'fallbackSearchFlow',
     inputSchema: FallbackSearchInputSchema,
