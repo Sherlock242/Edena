@@ -36,7 +36,12 @@ const fallbackSearchFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      // Attempt to use the primary Google AI model with a simplified prompt
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        console.error('CRITICAL: GEMINI_API_KEY is not set in the environment.');
+        throw new Error('Server configuration error: Missing API Key.');
+      }
+
       console.log(`Attempting search with primary model: ${primaryModel}`);
       
       const response = await ai.generate({
@@ -53,7 +58,7 @@ const fallbackSearchFlow = ai.defineFlow(
       throw new Error('Primary model did not return a valid text response.');
 
     } catch (error) {
-      console.error('Fallback search flow failed:', error);
+      console.error('Fallback search flow failed with a critical error:', error);
       // Final response if all attempts fail
       return { response: "(System) I'm sorry, I'm having trouble connecting to my AI services at the moment. Please check your configuration or try again shortly." };
     }
