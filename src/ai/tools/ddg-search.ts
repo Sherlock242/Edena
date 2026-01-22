@@ -2,7 +2,7 @@
 /**
  * @fileOverview A Genkit tool for performing a general-purpose search using the OpenRouter API.
  *
- * - ddgSearchTool - A Genkit tool that takes a search query and uses OpenRouter to get an answer.
+ * - openRouterSearchTool - A Genkit tool that takes a search query and uses OpenRouter to get an answer.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
@@ -12,10 +12,10 @@ const SearchInputSchema = z.object({
   query: z.string().describe('The search query for the web search.'),
 });
 
-export const ddgSearchTool = ai.defineTool(
+export const openRouterSearchTool = ai.defineTool(
   {
     name: 'openRouterSearch',
-    description: 'Uses OpenRouter to answer general questions.',
+    description: 'Uses OpenRouter to answer general questions as a fallback search.',
     inputSchema: SearchInputSchema,
     outputSchema: z.string(),
   },

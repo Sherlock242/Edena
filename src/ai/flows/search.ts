@@ -16,7 +16,8 @@ import {dictionaryTool} from '../tools/dictionary';
 import {booksTool} from '../tools/books';
 import {newsTool} from '../tools/news';
 import { youtubeTool } from '../tools/youtube';
-import { ddgSearchTool } from '../tools/ddg-search';
+import { openRouterSearchTool } from '../tools/ddg-search';
+import { ddgInstantSearchTool } from '../tools/ddg-instant-search';
 import { articlesTool } from '../tools/articles';
 import { cricketTool } from '../tools/cricket';
 import { mediaSearchTool } from '../tools/media-search';
@@ -42,8 +43,9 @@ const isValidSearchResult = (result: string | null | undefined): result is strin
     if (!result) return false;
     const lowerResult = result.toLowerCase();
     return !lowerResult.includes('no direct answer') && 
-           !lowerResult.includes("couldn't perform a web search") && 
+           !lowerResult.includes("couldn't perform a web search") &&
            !lowerResult.includes('no results found') &&
+           !lowerResult.includes('no instant answer found') &&
            !lowerResult.includes('could not find') &&
            !lowerResult.includes('encountered an error');
 }
@@ -169,13 +171,23 @@ export async function performSearch(
       return { response: directApiResult };
   }
 
-  // Level 3: If direct methods fail, use OpenRouter as the final fallback.
+  // Level 3: Try DuckDuckGo for an instant answer.
   try {
-      const searchResult = await ddgSearchTool({ query: originalQuery });
-      if (searchResult) {
+      const ddgResult = await ddgInstantSearchTool({ query: originalQuery });
+      if (isValidSearchResult(ddgResult)) {
+          return { response: `(D) ${ddgResult}` };
+      }
+  } catch (e) {
+      console.warn("DDG Instant search failed, proceeding to OpenRouter.", e);
+  }
+
+  // Level 4: If all else fails, use OpenRouter as the final fallback.
+  try {
+      const searchResult = await openRouterSearchTool({ query: originalQuery });
+      if (searchResult && isValidSearchResult(searchResult)) {
           return { response: `(OR) ${searchResult}` };
       }
-      throw new Error("OpenRouter search returned an empty result.");
+      throw new Error("OpenRouter search returned an empty or invalid result.");
   } catch (e) {
       console.error("Final search attempt (OpenRouter) failed:", e);
       // Final response if all attempts fail
