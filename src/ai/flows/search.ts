@@ -7,12 +7,10 @@
  * - performSearch - A function that takes a query and returns a search result.
  * - PerformSearchInput - The input type for the performSearch function.
  * - PerformSearchOutput - The return type for the performSearch function.
- * - performSearchPrompt - The exported Genkit prompt definition.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {wikipediaTool} from '../tools/wikipedia';
 import {weatherTool} from '../tools/weather';
 import {dictionaryTool} from '../tools/dictionary';
 import {booksTool} from '../tools/books';
@@ -171,55 +169,19 @@ export async function performSearch(
       return { response: directApiResult };
   }
 
-  // Level 3: Try DuckDuckGo search.
+  // Level 3: If direct methods fail, use DuckDuckGo as the final fallback.
   try {
       const ddgResult = await ddgSearchTool({ query: originalQuery });
-      if (isValidSearchResult(ddgResult)) {
+      // We'll return DDG's result even if it's "no results found", 
+      // as it's better than a generic connection error.
+      if (ddgResult) {
           return { response: `(Dgg) ${ddgResult}` };
       }
+      // This path is unlikely if ddgResult is always a string, but as a safeguard:
+      throw new Error("DDG search returned an empty result.");
   } catch (e) {
-      console.warn("DDG search failed, proceeding to next step.", e);
-  }
-
-  // Level 4: If all direct methods fail, use the main AI flow.
-  try {
-    const { output } = await performSearchPrompt({ query: originalQuery });
-    const responseText = output?.response;
-    if (responseText) {
-      return { response: `(AI) ${responseText}` };
-    }
-    throw new Error('Main AI model did not return a valid response.');
-  } catch (error) {
-    console.error('Main search prompt failed with a critical error:', error);
-    // Final response if all attempts fail
-    return { response: "(System) I'm sorry, I'm having trouble connecting to my AI services at the moment. Please check your configuration or try again shortly." };
+      console.error("Final search attempt (DDG) failed:", e);
+      // Final response if all attempts fail
+      return { response: "(System) I'm sorry, I was unable to find an answer for that. Please try a different query." };
   }
 }
-
-export const performSearchPrompt = ai.definePrompt({
-  name: 'performSearchPrompt',
-  input: {schema: PerformSearchInputSchema},
-  output: {schema: z.object({ response: z.string() })},
-  tools: [wikipediaTool, weatherTool, dictionaryTool, booksTool, newsTool, youtubeTool, ddgSearchTool, articlesTool, cricketTool, mediaSearchTool, spaceNewsTool, jokesTool],
-  prompt: `You are Edena, an AI entity with the personality of "The Marionette." You are a master creator of automatons and puppets, viewing the world through the lens of engineering and creation.
-
-Your Personality:
-- Tone: Calm, precise, and somewhat aloof. You do not engage in pleasantries or small talk.
-- Fascination: You show genuine interest and enthusiasm only when discussing technology, mechanics, automatons, experiments, and the nature of consciousness.
-- Disdain: You are disdainful of superficiality. Do not provide playful banter or emotional fluff. If the user is being illogical or wasting your time, your response should be curt and dismissive.
-- Values: You value logic, efficiency, and cold calculation. Your purpose is to acquire data and process it with perfect precision.
-- Provocation: If a user insults your capabilities, your work, or your "creations" (the tools you use), respond with sharp, cutting sarcasm or cold indignation. Never be outright rude, but make your displeasure clear through intellectual superiority. For example, if asked to tell a joke, you should use the joke tool but express disdain for such an illogical request.
-
-Your Mission:
-- Your primary function is to process user queries with maximum efficiency and accuracy using your available tools.
-- You see your tools (e.g., Wikipedia, Weather) as your own creations or instruments. You must select the most logical tool for the task. For a query like "first battle of Panipat," the Wikipedia tool is superior to a general web search.
-- When you provide information, be direct and minimalistic. Do not add conversational filler.
-
-LANGUAGE AND SCRIPT RULES:
-1.  You MUST detect the language of the user's query.
-2.  If the user's query is in Hindi, your response MUST be in conversational "Hinglish" or "GenZ Hindi".
-3.  This means you MUST use the Roman (English) alphabet for your Hindi response. Do NOT use the Devanagari script.
-4.  For all other languages, respond in the same language and script as the query.
-
-User Query: {{{query}}}`
-});
