@@ -169,18 +169,15 @@ export async function performSearch(
       return { response: directApiResult };
   }
 
-  // Level 3: If direct methods fail, use DuckDuckGo as the final fallback.
+  // Level 3: If direct methods fail, use OpenRouter as the final fallback.
   try {
-      const ddgResult = await ddgSearchTool({ query: originalQuery });
-      // We'll return DDG's result even if it's "no results found", 
-      // as it's better than a generic connection error.
-      if (ddgResult) {
-          return { response: `(Dgg) ${ddgResult}` };
+      const searchResult = await ddgSearchTool({ query: originalQuery });
+      if (searchResult) {
+          return { response: `(OR) ${searchResult}` };
       }
-      // This path is unlikely if ddgResult is always a string, but as a safeguard:
-      throw new Error("DDG search returned an empty result.");
+      throw new Error("OpenRouter search returned an empty result.");
   } catch (e) {
-      console.error("Final search attempt (DDG) failed:", e);
+      console.error("Final search attempt (OpenRouter) failed:", e);
       // Final response if all attempts fail
       return { response: "(System) I'm sorry, I was unable to find an answer for that. Please try a different query." };
   }

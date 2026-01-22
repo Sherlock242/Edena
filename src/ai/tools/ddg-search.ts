@@ -1,56 +1,64 @@
 'use server';
 /**
- * @fileOverview A Genkit tool for performing a web search using the DuckDuckGo API.
+ * @fileOverview A Genkit tool for performing a general-purpose search using the OpenRouter API.
  *
- * - ddgSearchTool - A Genkit tool that takes a search query and returns web search results.
+ * - ddgSearchTool - A Genkit tool that takes a search query and uses OpenRouter to get an answer.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import fetch from 'node-fetch';
 
-const DDGSearchInputSchema = z.object({
+const SearchInputSchema = z.object({
   query: z.string().describe('The search query for the web search.'),
 });
 
 export const ddgSearchTool = ai.defineTool(
   {
-    name: 'ddgSearch',
-    description: 'Performs a web search using DuckDuckGo to answer general questions.',
-    inputSchema: DDGSearchInputSchema,
+    name: 'openRouterSearch',
+    description: 'Uses OpenRouter to answer general questions.',
+    inputSchema: SearchInputSchema,
     outputSchema: z.string(),
   },
   async (input) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey || apiKey === 'your_open_router_api_key_here') {
+      return 'Sorry, the OpenRouter API key is not configured.';
+    }
+
     try {
-      const response = await fetch(
-        `https://api.duckduckgo.com/?q=${encodeURIComponent(
-          input.query
-        )}&format=json&t=genkit`
-      );
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "model": "mistralai/mistral-7b-instruct-v0.2",
+          "messages": [
+            { "role": "system", "content": "You are a helpful search assistant. Provide a concise and direct answer to the user's query." },
+            { "role": "user", "content": input.query }
+          ]
+        })
+      });
 
       if (!response.ok) {
-        return `I couldn't perform a web search for "${input.query}".`;
+          const errorBody = await response.text();
+          console.error(`OpenRouter API error: ${response.status} ${response.statusText}`, errorBody);
+          return `I couldn't perform a search with OpenRouter. Status: ${response.status}`;
       }
 
       const data: any = await response.json();
-      
-      if (!data.AbstractText && !data.RelatedTopics.length) {
-        return `No direct answer or related topics found for "${input.query}".`;
+      const content = data.choices[0]?.message?.content;
+
+      if (!content || content.trim() === "") {
+        return `OpenRouter returned an empty response for "${input.query}".`;
       }
 
-      if (data.AbstractText) {
-        return `Here's a summary for "${input.query}": ${data.AbstractText}`;
-      }
-      
-      const topResult = data.RelatedTopics[0];
-      if (topResult) {
-        return `Here is the top result for "${input.query}": ${topResult.Text}`;
-      }
-
-      return `I found some information for "${input.query}" but couldn't create a concise summary.`;
+      return content;
 
     } catch (error) {
-      console.error('DuckDuckGo API error:', error);
-      return 'Sorry, I encountered an error while trying to perform a web search.';
+      console.error('OpenRouter API error:', error);
+      return 'Sorry, I encountered an error while trying to perform a search with OpenRouter.';
     }
   }
 );
