@@ -395,7 +395,7 @@ const AIConsciousnessPage = () => {
     }
     stopVideoStream(); // Stop any existing stream
     try {
-        const constraints = { video: { facingMode: { exact: mode } } };
+        const constraints = { video: { facingMode: mode } };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         setHasCameraPermission(true);
         setShowVideo(true);
@@ -439,11 +439,10 @@ const AIConsciousnessPage = () => {
   }
 
   useEffect(() => {
-    if (videoStream && videoRef.current) {
+    if (videoRef.current) {
       videoRef.current.srcObject = videoStream;
-      videoRef.current.play().catch(e => console.error("Video play failed:", e));
     }
-  }, [videoStream, showVideo]);
+  }, [videoStream]);
 
   useEffect(() => {
     if (isClient) {
