@@ -24,6 +24,8 @@ export const openRouterSearchTool = ai.defineTool(
     if (!apiKey || apiKey === 'your_open_router_api_key_here') {
       return 'Sorry, the OpenRouter API key is not configured.';
     }
+    
+    const systemPrompt = "You are a helpful search assistant. Provide a concise and direct answer to the user's query. Do not start your response with any preamble or conversational filler.";
 
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -33,9 +35,9 @@ export const openRouterSearchTool = ai.defineTool(
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          "model": "mistralai/mistral-7b-instruct-v0.2",
+          "model": "anthropic/claude-3-haiku",
+          "system": systemPrompt,
           "messages": [
-            { "role": "system", "content": "You are a helpful search assistant. Provide a concise and direct answer to the user's query." },
             { "role": "user", "content": input.query }
           ]
         })
